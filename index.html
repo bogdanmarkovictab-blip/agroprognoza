@@ -192,8 +192,6 @@ table.mx{border-collapse:separate;border-spacing:0;table-layout:fixed;font-varia
 /* chart */
 .chartbox{position:relative;height:340px}
 .toggles{display:flex;gap:6px;flex-wrap:wrap}
-.chart-opts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-#chartLinesTog[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:600}
 .tog{display:inline-flex;align-items:center;gap:6px;height:28px;border:1px solid var(--line-2);background:var(--surface);border-radius:14px;padding:0 10px;font-size:12.5px}
 .tog .sw{width:14px;height:3px;border-radius:2px}
 .tog[aria-pressed="false"]{opacity:.45}
@@ -448,7 +446,6 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
     <div>
       <div class="eyebrow">Poređenje modela po satima</div>
       <h2 id="chartTitle">Temperatura vazduha</h2>
-      <p>Debela linija je medijana. Senka oko nje je raspon od najnižeg do najvišeg modela: što je senka uža, modeli se više slažu i prognoza je pouzdanija.</p>
     </div>
     <div class="controls">
       <div class="seg" id="chartVar" role="group" aria-label="Veličina">
@@ -465,7 +462,6 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
       </div>
     </div>
   </div>
-  <div class="chart-opts"><button type="button" class="chip" id="chartLinesTog" aria-pressed="false">Prikaži linije modela</button><span class="note">Dugmići ispod biraju koji modeli ulaze u medijanu i raspon.</span></div>
   <div class="toggles" id="toggles"></div>
   <div class="chartbox"><canvas id="chart" aria-label="Grafikon prognoze po satima"></canvas></div>
 </section>
@@ -943,7 +939,7 @@ function renderToggles(){
   $("#toggles").innerHTML=MODELS.map(m=>{
     const st=state.models[m.id];const ok=st&&!st.error;
     return `<button type="button" class="tog" data-id="${m.id}" aria-pressed="${state.enabled.has(m.id)}" ${ok?"":"disabled title='Nije dostupno'"}><span class="sw" style="background:var(${m.c})"></span>${m.name}</button>`;
-  }).join("")+`<span class="tog" aria-hidden="true" style="border-style:dashed"><span class="sw" style="background:var(--ink);height:4px"></span>Medijana</span><span class="tog" aria-hidden="true" style="border-style:dashed"><span class="sw" style="background:var(--accent);opacity:.4;height:10px"></span>Raspon modela</span>`;
+  }).join("")+`<span class="tog" aria-hidden="true" style="border-style:dashed"><span class="sw" style="background:var(--ink);height:4px"></span>Medijana</span>`;
 }
 const CVARS={
   temp:{key:"temperature_2m",title:"Temperatura vazduha",unit:"°C"},
@@ -958,31 +954,16 @@ function renderChart(){
   const s=state.nowIdx,e=Math.min(state.time.length,s+state.range*24);
   const labels=state.time.slice(s,e);
   const prep=arr=>{if(!arr)return[];let v=arr.slice(s,e);if(cv.cum){let acc=0,seen=false;v=v.map(x=>{if(x==null)return seen?null:null;seen=true;acc+=x;return Math.round(acc*10)/10})}return v};
-  const showLines=store.get("ap.chartLines",false);
-  const per=activeModels().map(m=>({m,d:prep(series(m.id,cv.key))}));
-  const lo=labels.map((_,k)=>{const v=per.map(x=>x.d[k]).filter(x=>x!=null);return v.length?Math.min(...v):null});
-  const hi=labels.map((_,k)=>{const v=per.map(x=>x.d[k]).filter(x=>x!=null);return v.length?Math.max(...v):null});
-  const acc=css("--accent");
-  const fillCol=acc.startsWith("#")&&acc.length===7?acc+"38":"rgba(47,107,79,.22)";
-  const ds=[
-    {label:"Najniži model",data:lo,borderColor:"transparent",backgroundColor:"transparent",pointRadius:0,pointHoverRadius:0,tension:.25,band:true},
-    {label:"Najviši model",data:hi,borderColor:"transparent",backgroundColor:fillCol,fill:"-1",pointRadius:0,pointHoverRadius:0,tension:.25,band:true},
-    {label:"Medijana",data:prep(consensus(cv.key)),borderColor:css("--ink"),backgroundColor:css("--ink"),borderWidth:3,pointRadius:0,pointHoverRadius:5,tension:.25,med:true}
-  ];
-  if(showLines)per.forEach(({m,d})=>ds.push({label:m.name,data:d,borderColor:css(m.c),backgroundColor:css(m.c),borderWidth:1.3,pointRadius:0,pointHoverRadius:3,tension:.25,spanGaps:false}));
-  $("#chartLinesTog").setAttribute("aria-pressed",String(showLines));
-  $("#chartLinesTog").textContent=showLines?"Sakrij linije modela":"Prikaži linije modela";
+  const ds=activeModels().map(m=>({label:m.name,data:prep(series(m.id,cv.key)),borderColor:css(m.c),backgroundColor:css(m.c),borderWidth:1.6,pointRadius:0,pointHoverRadius:4,tension:.25,spanGaps:false}));
+  ds.push({label:"Medijana",data:prep(consensus(cv.key)),borderColor:css("--ink"),backgroundColor:css("--ink"),borderWidth:3,borderDash:[6,4],pointRadius:0,pointHoverRadius:4,tension:.25});
   const grid=css("--line"),muted=css("--muted"),ink=css("--ink");
   if(chart)chart.destroy();
   chart=new Chart($("#chart"),{type:"line",data:{labels,datasets:ds},options:{
     responsive:true,maintainAspectRatio:false,animation:false,
     interaction:{mode:"index",intersect:false},
     plugins:{legend:{display:false},tooltip:{backgroundColor:css("--surface"),titleColor:ink,bodyColor:ink,borderColor:css("--line-2"),borderWidth:1,padding:10,boxWidth:10,boxHeight:3,
-      filter:c=>!c.dataset.band,
-      itemSort:(a,b)=>(b.dataset.med?1e9:(b.parsed.y??-1e9))-(a.dataset.med?1e9:(a.parsed.y??-1e9)),
-      callbacks:{title:it=>{const t=it[0].label;return dayLabel(t,false)+" u "+t.slice(11,16)},
-        label:c=>` ${c.dataset.label}: ${c.parsed.y==null?"–":r1(c.parsed.y)} ${cv.unit}`,
-        afterBody:it=>{const k=it[0]?.dataIndex;if(k==null||lo[k]==null)return"";return `Raspon modela: ${r1(lo[k])} do ${r1(hi[k])} ${cv.unit} (razlika ${r1(hi[k]-lo[k])})`}}}},
+      itemSort:(a,b)=>(b.parsed.y??-1e9)-(a.parsed.y??-1e9),
+      callbacks:{title:it=>{const t=it[0].label;return dayLabel(t,false)+" u "+t.slice(11,16)},label:c=>` ${c.dataset.label}: ${c.parsed.y==null?"–":r1(c.parsed.y)} ${cv.unit}`}}},
     scales:{
       x:{grid:{color:ctx=>{const t=labels[ctx.index];return t&&t.endsWith("T00:00")?css("--line-2"):"transparent"}},border:{color:css("--line-2")},
         ticks:{color:muted,autoSkip:false,maxRotation:0,callback:(v,i)=>{const t=labels[i];if(!t)return"";const h=hourOf(t);
@@ -1507,7 +1488,6 @@ function seg(id,fn){$(id).addEventListener("click",e=>{const b=e.target.closest(
 seg("#mxMode",v=>{state.mx=v;renderMatrix()});
 seg("#chartVar",v=>{state.cvar=v;renderChart()});
 seg("#chartRange",v=>{state.range=+v;renderChart()});
-$("#chartLinesTog").addEventListener("click",()=>{store.setLocal("ap.chartLines",!store.get("ap.chartLines",false));renderChart()});
 $("#toggles").addEventListener("click",e=>{const b=e.target.closest("button[data-id]");if(!b)return;const id=b.dataset.id;
   if(state.enabled.has(id)){if(activeModels().length<=1)return;state.enabled.delete(id)}else state.enabled.add(id);
   store.set("ap.enabled",[...state.enabled]);renderAll()});
