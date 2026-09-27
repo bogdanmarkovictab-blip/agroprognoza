@@ -24,7 +24,7 @@
   --line:#dce1da; --line-2:#c6cdc5; --accent:#2f6b4f; --accent-soft:#dcebe2; --on-accent:#ffffff;
   --rain:#3987e5; --rain-soft:#cde2fb;
   --good:#0ca30c; --warn:#e39a00; --bad:#d03b3b; --good-soft:#dcf2dc; --warn-soft:#fdf0cf; --bad-soft:#f8dddd;
-  --m1:#2a78d6; --m2:#eb6834; --m3:#1baf7a; --m4:#eda100; --m5:#e87ba4; --m6:#008300; --m7:#4a3aa7; --m8:#e34948;
+  --m1:#2a78d6; --m2:#eb6834; --m3:#1baf7a; --m4:#eda100; --m5:#e87ba4; --m6:#008300; --m7:#4a3aa7; --m8:#e34948; --m9:#0e8fa3;
   --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
@@ -35,7 +35,7 @@
     --line:#29322c; --line-2:#37423b; --accent:#73b894; --accent-soft:#1f3328; --on-accent:#0e1310;
     --rain:#5598e7; --rain-soft:#1c3a5e;
     --good:#2fbf2f; --warn:#fab219; --bad:#e66767; --good-soft:#15301a; --warn-soft:#3a2f10; --bad-soft:#3a1c1c;
-    --m1:#3987e5; --m2:#d95926; --m3:#199e70; --m4:#c98500; --m5:#d55181; --m6:#008300; --m7:#9085e9; --m8:#e66767;
+    --m1:#3987e5; --m2:#d95926; --m3:#199e70; --m4:#c98500; --m5:#d55181; --m6:#008300; --m7:#9085e9; --m8:#e66767; --m9:#2bb3c7;
   }
 }
 :root[data-theme="dark"]{
@@ -44,7 +44,7 @@
   --line:#29322c; --line-2:#37423b; --accent:#73b894; --accent-soft:#1f3328; --on-accent:#0e1310;
   --rain:#5598e7; --rain-soft:#1c3a5e;
   --good:#2fbf2f; --warn:#fab219; --bad:#e66767; --good-soft:#15301a; --warn-soft:#3a2f10; --bad-soft:#3a1c1c;
-  --m1:#3987e5; --m2:#d95926; --m3:#199e70; --m4:#c98500; --m5:#d55181; --m6:#008300; --m7:#9085e9; --m8:#e66767;
+  --m1:#3987e5; --m2:#d95926; --m3:#199e70; --m4:#c98500; --m5:#d55181; --m6:#008300; --m7:#9085e9; --m8:#e66767; --m9:#2bb3c7;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -484,8 +484,10 @@ const MODELS=[
   {id:"ukmo_seamless",name:"UKMO",org:"Velika Britanija (Met Office)",res:"10 km",horizon:"7 dana",c:"--m5"},
   {id:"ecmwf_aifs025_single",name:"ECMWF AIFS",org:"ECMWF, AI model",res:"25 km",horizon:"15 dana",c:"--m6"},
   {id:"gem_seamless",name:"GEM",org:"Kanada (ECCC)",res:"15–25 km",horizon:"10 dana",c:"--m7"},
-  {id:"jma_seamless",name:"JMA",org:"Japan (JMA)",res:"20–55 km",horizon:"11 dana",c:"--m8"}
+  {id:"jma_seamless",name:"JMA",org:"Japan (JMA)",res:"20–55 km",horizon:"11 dana",c:"--m8"},
+  {id:"google",name:"Google",org:"Google Weather (MetNet, AI)",res:"oko 1–5 km",horizon:"10 dana",c:"--m9",google:true}
 ];
+if(!window.AP_GOOGLE_WEATHER_KEY){const gi=MODELS.findIndex(m=>m.google);if(gi>=0)MODELS.splice(gi,1)}
 const HOURLY="temperature_2m,relative_humidity_2m,dew_point_2m,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m,wind_direction_10m,cloud_cover,weather_code,is_day";
 const AGRO_H="soil_temperature_0cm,soil_temperature_6cm,soil_temperature_18cm,soil_moisture_0_to_1cm,soil_moisture_3_to_9cm,soil_moisture_9_to_27cm,soil_moisture_27_to_81cm,et0_fao_evapotranspiration";
 const AGRO_D="et0_fao_evapotranspiration,sunshine_duration";
@@ -514,6 +516,12 @@ const state={
   models:{}, agro:null, time:[], nowIdx:0, off:0, fetchedAt:null
 };
 let chart=null;
+(function(){ // novi izvor (npr. Google) uključi jednom, bez diranja ranijeg izbora
+  const BASE=["ecmwf_ifs025","icon_seamless","gfs_seamless","meteofrance_seamless","ukmo_seamless","ecmwf_aifs025_single","gem_seamless","jma_seamless"];
+  const seen=store.get("ap.seenModels",BASE);let ch=false;
+  MODELS.forEach(m=>{if(!seen.includes(m.id)){state.enabled.add(m.id);seen.push(m.id);ch=true}});
+  if(ch){store.setLocal("ap.seenModels",seen);store.setLocal("ap.enabled",[...state.enabled])}
+})();
 
 /* ---------- helpers ---------- */
 const cyr={"А":"A","Б":"B","В":"V","Г":"G","Д":"D","Ђ":"Đ","Е":"E","Ж":"Ž","З":"Z","И":"I","Ј":"J","К":"K","Л":"L","Љ":"Lj","М":"M","Н":"N","Њ":"Nj","О":"O","П":"P","Р":"R","С":"S","Т":"T","Ћ":"Ć","У":"U","Ф":"F","Х":"H","Ц":"C","Ч":"Č","Џ":"Dž","Ш":"Š"};
@@ -559,7 +567,8 @@ function base(){const {lat,lon}=state.loc;return `https://api.open-meteo.com/v1/
 async function load(){
   $("#matrix").innerHTML='<div class="loading">Učitavam prognoze iz '+MODELS.length+' modela…</div>';
   renderNowSkeleton();
-  const jobs=MODELS.map(m=>getJSON(base()+"&hourly="+HOURLY+"&models="+m.id).then(j=>({id:m.id,j}),e=>({id:m.id,err:e.message})));
+  const jobs=MODELS.filter(m=>!m.google).map(m=>getJSON(base()+"&hourly="+HOURLY+"&models="+m.id).then(j=>({id:m.id,j}),e=>({id:m.id,err:e.message})));
+  const gJob=MODELS.some(m=>m.google)?googleHours().then(rows=>({rows}),e=>({err:e.message})):null;
   const agroJob=getJSON(base()+"&hourly="+AGRO_H+"&daily="+AGRO_D).then(j=>j,e=>({error:e.message}));
   const res=await Promise.all(jobs);
   state.models={};
@@ -583,7 +592,55 @@ async function load(){
   const i=state.time.indexOf(nowStr);
   state.nowIdx=i<0?0:i;
   state.fetchedAt=new Date();
+  if(gJob){const g=await gJob;state.models.google=g.err?{error:g.err}:googleAlign(g.rows)}
   renderAll();
+}
+
+/* ---------- Google Weather API (dodatni izvor, potreban ključ) ---------- */
+function gCode(t){
+  t=String(t||"");
+  if(t.includes("THUNDER")||t.includes("HAIL"))return 95;
+  if(t.includes("RAIN_AND_SNOW"))return 66;
+  if(t.includes("SNOW")||t.includes("BLIZZARD")||t.includes("FLURRIES"))return 71;
+  if(t.includes("SHOWER"))return 80;
+  if(t.includes("HEAVY_RAIN"))return 65;
+  if(t.includes("RAIN"))return 61;
+  if(t.includes("DRIZZLE"))return 51;
+  if(t.includes("FOG")||t.includes("HAZE"))return 45;
+  if(t==="CLEAR")return 0;
+  if(t==="MOSTLY_CLEAR")return 1;
+  if(t==="PARTLY_CLOUDY")return 2;
+  if(t.includes("CLOUDY")||t==="WINDY")return 3;
+  return null;
+}
+async function googleHours(){
+  const {lat,lon}=state.loc;
+  const ck="ap.g:"+lat.toFixed(3)+","+lon.toFixed(3);
+  try{const c=JSON.parse(localStorage.getItem(ck)||"null");if(c&&Date.now()-c.at<60*60*1000&&c.rows?.length)return c.rows}catch(e){}
+  const rows=[];let token="",pages=0;
+  do{
+    const u=`https://weather.googleapis.com/v1/forecast/hours:lookup?key=${encodeURIComponent(window.AP_GOOGLE_WEATHER_KEY)}&location.latitude=${lat.toFixed(4)}&location.longitude=${lon.toFixed(4)}&hours=240&pageSize=240&unitsSystem=METRIC&languageCode=sr${token?"&pageToken="+encodeURIComponent(token):""}`;
+    const r=await fetch(u);const j=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(j.error?.status==="PERMISSION_DENIED"?"ključ nije dozvoljen za ovaj sajt":(j.error?.message||"HTTP "+r.status));
+    (j.forecastHours||[]).forEach(f=>{
+      const d=f.displayDateTime;if(!d)return;
+      const t=`${d.year}-${String(d.month).padStart(2,"0")}-${String(d.day).padStart(2,"0")}T${String(d.hours||0).padStart(2,"0")}:00`;
+      rows.push({t,T:f.temperature?.degrees,RH:f.relativeHumidity,DP:f.dewPoint?.degrees,P:f.precipitation?.qpf?.quantity??0,POP:f.precipitation?.probability?.percent,W:f.wind?.speed?.value,G:f.wind?.gust?.value,WD:f.wind?.direction?.degrees,CC:f.cloudCover,C:gCode(f.weatherCondition?.type),D:f.isDaytime?1:0});
+    });
+    token=j.nextPageToken||"";pages++;
+  }while(token&&pages<12);
+  if(!rows.length)throw new Error("prazan odgovor");
+  try{localStorage.setItem(ck,JSON.stringify({at:Date.now(),rows}))}catch(e){}
+  return rows;
+}
+function googleAlign(rows){
+  const n=state.time.length,idx={};state.time.forEach((t,i)=>idx[t]=i);
+  const keys={temperature_2m:"T",relative_humidity_2m:"RH",dew_point_2m:"DP",precipitation:"P",precipitation_probability:"POP",wind_speed_10m:"W",wind_gusts_10m:"G",wind_direction_10m:"WD",cloud_cover:"CC",weather_code:"C",is_day:"D"};
+  const h={time:state.time};Object.keys(keys).forEach(k=>h[k]=new Array(n).fill(null));
+  let hit=0;
+  rows.forEach(r=>{const i=idx[r.t];if(i==null)return;hit++;Object.entries(keys).forEach(([k,f])=>{if(r[f]!=null)h[k][i]=r[f]})});
+  // Google počinje od tekućeg sata: raniji sati današnjeg dana ostaju prazni
+  return hit?{h}:{error:"vremena se ne poklapaju sa lokacijom"};
 }
 
 /* series helpers */
