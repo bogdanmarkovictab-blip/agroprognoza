@@ -127,7 +127,7 @@ button{cursor:pointer}
 .updated{color:var(--muted);font-size:12px;margin-top:auto}
 .alerts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .alert{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
-.alert .head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.alert .head{display:flex;align-items:center;justify-content:space-between;gap:4px 8px;flex-wrap:wrap}
 .alert .val{font-family:var(--display);font-size:26px;font-weight:600;line-height:1.1}
 .alert .txt{color:var(--ink-2);font-size:13px}
 .pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;letter-spacing:.03em;padding:2px 8px;border-radius:10px;white-space:nowrap}
@@ -141,7 +141,11 @@ button{cursor:pointer}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .panel-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .panel-head p{margin:2px 0 0;color:var(--ink-2);font-size:13px;max-width:70ch}
-.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{white-space:nowrap;flex:0 0 auto}
+.controls{max-width:100%;min-width:0}
+.panel-head>*{min-width:0;max-width:100%}
 .seg button{border:0;background:var(--surface);padding:6px 11px;font-size:13px;border-right:1px solid var(--line-2)}
 .seg button:last-child{border-right:0}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);font-weight:600}
@@ -250,6 +254,13 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
 .htab tr.sum td{font-weight:600;border-top:1px solid var(--line-2)}
 .htab .prelim{color:var(--muted)}
 .hist-grid{margin-top:4px}
+@media (max-width:420px){
+  .panel{padding:14px 12px}
+  .htab th,.htab td{padding:5px 3px;font-size:12px}
+  .htab td small{display:block;margin-left:0;font-size:10.5px}
+  .htab thead th{font-size:9.5px;letter-spacing:.03em}
+  table.soil{font-size:12px}
+}
 #hVar{max-width:100%;overflow-x:auto}
 #hVar button{white-space:nowrap}
 @media (max-width:900px){.hist-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -292,7 +303,8 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
 
 @media (max-width:900px){
   .hero{grid-template-columns:1fr}
-  .grid2{grid-template-columns:1fr}
+  .grid2{grid-template-columns:minmax(0,1fr)}
+  .grid2>*{min-width:0}
 }
 @media (max-width:600px){
   .alerts{grid-template-columns:repeat(2,minmax(0,1fr))}
