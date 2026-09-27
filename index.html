@@ -131,12 +131,15 @@ button{cursor:pointer}
 .soilbig .tr{font-family:var(--body);font-size:13px;font-weight:600}
 .soilbig .d{font-size:12.5px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:0 10px}
 .soilbig .d span{white-space:nowrap}
+.sidecol{display:flex;flex-direction:column;gap:8px;padding-left:16px;border-left:1px solid var(--line-2);min-width:0}
+.sidecol .soilbig{border-left:0;padding-left:0}
+.soilbig.rainm .v{color:var(--rain);font-size:30px}
 .waterrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:4px}
 .wtile{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:1px;min-width:0}
 .wtile .l{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .wtile .v{font-family:var(--display);font-size:22px;font-weight:600;line-height:1.1}
 .wtile .d{font-size:11.5px;color:var(--ink-2)}
-@media (max-width:600px){.nowrow{flex-wrap:nowrap;gap:12px}.now .nowrow .big{font-size:50px;gap:8px}.now .nowrow .big svg{width:50px;height:50px}.soilbig{padding-left:12px}.soilbig .v{font-size:42px}.soilbig .d{font-size:11.5px}}
+@media (max-width:600px){.nowrow{flex-wrap:nowrap;gap:12px}.now .nowrow .big{font-size:50px;gap:8px}.now .nowrow .big svg{width:50px;height:50px}.sidecol{padding-left:12px}.soilbig.rainm .v{font-size:26px}.soilbig .v{font-size:42px}.soilbig .d{font-size:11.5px}}
 .now .big{font-family:var(--display);font-size:64px;font-weight:600;line-height:1;display:flex;align-items:center;gap:12px}
 .now .big svg{width:68px;height:68px;color:var(--ink-2)}
 .now .sub{color:var(--ink-2)}
@@ -843,7 +846,41 @@ function waterNowHtml(){
     <div class="wtile"><span class="l">Vlaga zemljišta</span><span class="v num">${m==null?"–":r0(m*100)+"%"}</span><span class="d">3–9 cm${m2!=null?` · 9–27 cm ${r0(m2*100)}%`:""}</span></div>
   </div>`;
 }
+/* izmerene padavine od početka meseca (ERA5 + poslednji dani preliminarno) */
+const rainM={key:null,val:null};
+const MGEN=["januara","februara","marta","aprila","maja","juna","jula","avgusta","septembra","oktobra","novembra","decembra"],MLOC=["januaru","februaru","martu","aprilu","maju","junu","julu","avgustu","septembru","oktobru","novembru","decembru"];
+async function fillRainNow(){
+  const el=$("#rainNow");if(!el)return;
+  const today=localToday();let y=+today.slice(0,4),m=+today.slice(5,7);
+  if(today.slice(8)==="01"){m--;if(!m){m=12;y--}}
+  const start=`${y}-${String(m).padStart(2,"0")}-01`,end=addDays(today,-1);
+  const monthEnd=ymd(new Date(Date.UTC(y,m,0,12)));const stop=end<monthEnd?end:monthEnd;
+  const key=hkey()+":"+start+":"+stop;
+  const show=v=>{
+    if(!v){el.hidden=true;return}
+    el.hidden=false;
+    el.innerHTML=`<span class="v num">${r0(v.sum)} mm</span><span class="d num"><span>kiša ${today.slice(8)==="01"?"u "+MLOC[m-1]:"od 1. "+MGEN[m-1]}</span>${v.pct!=null?`<span>${v.pct}% proseka</span>`:""}</span>`;
+    el.title=`Izmerene padavine ${fmtDate(start)}–${fmtDate(stop)}${v.pre?" (poslednji dani preliminarno)":""}${v.norm!=null?`, prosek 1991–2020 za isti period ${r0(v.norm)} mm`:""}`;
+  };
+  if(rainM.key===key)return show(rainM.val);
+  try{
+    const by={};const archEnd=addDays(today,-6);
+    if(archEnd>=start){toRows(await archive(start,archEnd<stop?archEnd:stop)).forEach(r=>{if(r.p!=null)by[r.t]=r.p})}
+    let pre=false;
+    if(stop>archEnd){
+      const j=await getJSON(`https://api.open-meteo.com/v1/forecast?latitude=${state.loc.lat.toFixed(4)}&longitude=${state.loc.lon.toFixed(4)}&daily=precipitation_sum&past_days=14&forecast_days=1&timezone=auto`);
+      (j.daily?.time||[]).forEach((t,i)=>{if(t>=start&&t<=stop&&by[t]==null&&j.daily.precipitation_sum[i]!=null){by[t]=j.daily.precipitation_sum[i];pre=true}});
+    }
+    const sum=Object.values(by).reduce((a,b)=>a+b,0);
+    let norm=null,pct=null;
+    const nc=await idb.get("norm:"+hkey());
+    if(nc&&nc.days){const a=start.slice(5),b=stop.slice(5);norm=nc.days.filter(d=>d.md>=a&&d.md<=b).reduce((x,d)=>x+(d.p||0),0);if(norm>1)pct=Math.round(sum/norm*100)}
+    rainM.key=key;rainM.val={sum,pre,norm,pct};
+    if(hkey()+":"+start+":"+stop===key)show(rainM.val);
+  }catch(e){el.hidden=true}
+}
 function renderNow(){
+  setTimeout(fillRainNow,0);
   setTimeout(renderMini,0);
   const i=state.nowIdx,act=activeModels();
   const temps=act.map(m=>series(m.id,"temperature_2m")?.[i]).filter(v=>v!=null);
@@ -856,7 +893,7 @@ function renderNow(){
   const upd=state.fetchedAt?state.fetchedAt.toLocaleTimeString("sr-Latn",{hour:"2-digit",minute:"2-digit"}):"";
   $("#now").innerHTML=`<div class="eyebrow">Lokacija</div><h1>${esc(state.loc.name)}</h1>
    <div class="coords num">${esc(state.loc.sub||"")}${state.loc.sub?" · ":""}${state.loc.lat.toFixed(4)}, ${state.loc.lon.toFixed(4)}</div>
-   <div class="nowrow"><div class="big num">${icon(codeRound)}${T==null?"–":Math.round(T)+"°"}</div>${soilNowHtml()}</div>
+   <div class="nowrow"><div class="big num">${icon(codeRound)}${T==null?"–":Math.round(T)+"°"}</div><div class="sidecol">${soilNowHtml()}<div class="soilbig rainm" id="rainNow" hidden></div></div></div>
    <div class="sub">${CODE_TXT(codeRound)}${temps.length>1?` · raspon modela ${Math.round(Math.min(...temps))}° do ${Math.round(Math.max(...temps))}°`:""}</div>
    <div class="meta num"><span>Vlažnost ${r0(cons.relative_humidity_2m)}%</span><span>Vetar ${r0(cons.wind_speed_10m)} km/h ${dirTxt}</span><span>Udari ${r0(cons.wind_gusts_10m)} km/h</span></div>
    <div class="updated">Ažurirano u ${upd} · ${act.length} od ${MODELS.length} modela</div>`;
