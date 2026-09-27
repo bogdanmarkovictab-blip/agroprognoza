@@ -319,6 +319,19 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
 .trow.sel{background:var(--accent-soft)}
 @media (max-width:900px){.hero>.now{order:1} .hero>.hourly{order:2} .hero>.alerts{order:3}}
 @media (max-width:600px){.hrgrid{grid-template-columns:repeat(24,50px)}}
+.acc-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.acc-sum .htile .v{font-size:22px}
+table.acct{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13px;min-width:560px}
+.acct th,.acct td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.acct th:first-child,.acct td:first-child{text-align:left}
+.acct thead th{font-size:10.5px;color:var(--muted);font-weight:600;letter-spacing:.05em;text-transform:uppercase;white-space:normal}
+.acct td.best{color:var(--good);font-weight:700}
+.acct td.worst{color:var(--bad)}
+.acct tr.med td{background:var(--accent-soft)}
+.acct .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;vertical-align:-1px}
+.acct .rk{display:inline-block;min-width:22px;text-align:center;border-radius:10px;background:var(--surface-2);font-weight:700;font-size:12px;padding:1px 6px}
+.acct tr.top .rk{background:var(--good);color:#fff}
+@media (max-width:700px){.acc-sum{grid-template-columns:minmax(0,1fr)}}
 /* 10-day list */
 .ten{display:flex;flex-direction:column}
 .trow{display:grid;grid-template-columns:112px 38px 92px 34px minmax(80px,1fr) 34px 84px;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
@@ -556,6 +569,30 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
     </div>
   </div>
   <p class="note" id="hNote">Izvor: Open-Meteo, ERA5 reanaliza (ECMWF/Copernicus). To nisu očitavanja jedne stanice, nego mreža ćelija od oko 9–25 km. Ona objedinjuje merenja meteoroloških stanica, satelita i modela. Pouzdana je za trendove i poređenje godina. Lokalni pljuskovi mogu da odstupaju od kišomera na parceli. Poslednjih nekoliko dana (oznaka *) je preliminarno i dopunjuje se konačnim podacima posle oko 5 dana.</p>
+</section>
+
+<section class="panel" id="acc">
+  <div class="panel-head">
+    <div>
+      <div class="eyebrow">Provera tačnosti</div>
+      <h2>Koji model najbolje pogađa ovu parcelu</h2>
+      <p>Poredi šta je svaki model prognozirao unapred sa onim što se stvarno desilo, dan po dan. Manja greška je bolja.</p>
+    </div>
+    <div class="controls">
+      <div class="seg" id="accLead" role="group" aria-label="Koliko dana unapred">
+        <button type="button" data-v="1" aria-pressed="true">1 dan unapred</button>
+        <button type="button" data-v="3" aria-pressed="false">3 dana</button>
+        <button type="button" data-v="5" aria-pressed="false">5 dana</button>
+      </div>
+      <div class="seg" id="accDays" role="group" aria-label="Period">
+        <button type="button" data-v="30" aria-pressed="false">30 d</button>
+        <button type="button" data-v="60" aria-pressed="false">60 d</button>
+        <button type="button" data-v="90" aria-pressed="true">90 d</button>
+      </div>
+    </div>
+  </div>
+  <div id="accOut"><button class="btn primary" type="button" id="accRun">Analiziraj tačnost za ovu parcelu</button></div>
+  <p class="note">Kao „stvarno vreme“ koristi se ERA5 arhiva (izmereno i objedinjeno, mreža oko 9–25 km). ERA5 pravi ECMWF, pa ECMWF modeli mogu da imaju malu prednost u temperaturi. Za kišu je ERA5 manje precizan od kišomera, zato je bolje gledati „pogođene kišne dane“ nego milimetre. Najpouzdaniji zaključak daje period od 90 dana.</p>
 </section>
 
 <section class="panel">
@@ -1438,6 +1475,99 @@ if("IntersectionObserver" in window){new IntersectionObserver(es=>{if(es[0].isIn
   addEventListener("scroll",()=>{const top=parseFloat(getComputedStyle(head).top)||0;head.classList.toggle("stuck",head.getBoundingClientRect().top<=top+1&&a.getBoundingClientRect().top<top+head.offsetHeight)},{passive:true});
 })();
 
+/* ---------- provera tačnosti modela (Previous Runs API vs ERA5) ---------- */
+const acc={lead:1,days:90,data:null,key:null,busy:false};
+function accReset(){acc.data=null;acc.key=null;$("#accOut").innerHTML='<button class="btn primary" type="button" id="accRun">Analiziraj tačnost za ovu parcelu</button>'}
+async function accFetch(){
+  const today=localToday();
+  const end=addDays(today,-6),start=addDays(end,-(acc.days-1));
+  const key=hkey()+":"+start+":"+end;
+  if(acc.key===key&&acc.data)return acc.data;
+  const leads=[1,3,5];
+  const vars=leads.flatMap(d=>["temperature_2m_previous_day"+d,"precipitation_previous_day"+d]).join(",");
+  const ms=MODELS.filter(m=>!m.google);
+  const {lat,lon}=state.loc;
+  const jobs=ms.map(m=>getJSON(`https://previous-runs-api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&hourly=${vars}&models=${m.id}&start_date=${start}&end_date=${end}&timezone=auto`).then(j=>({m,h:j.hourly}),e=>({m,err:e.message})));
+  const [truthD,...res]=await Promise.all([archive(start,end),...jobs]);
+  const truth={};toRows(truthD).forEach(r=>{if(r.mx!=null)truth[r.t]={mx:r.mx,mn:r.mn,p:r.p}});
+  const models={};
+  res.forEach(r=>{
+    if(r.err||!r.h){models[r.m.id]={err:r.err||"nema podataka"};return}
+    const out={};
+    leads.forEach(d=>{
+      const T=r.h["temperature_2m_previous_day"+d]||[],P=r.h["precipitation_previous_day"+d]||[];
+      const by={};
+      r.h.time.forEach((t,i)=>{const k=t.slice(0,10);const o=by[k]||(by[k]={t:[],p:0,np:0});if(T[i]!=null)o.t.push(T[i]);if(P[i]!=null){o.p+=P[i];o.np++}});
+      const daily={};
+      Object.entries(by).forEach(([k,o])=>{if(o.t.length>=20)daily[k]={mx:Math.max(...o.t),mn:Math.min(...o.t),p:o.np>=20?o.p:null}});
+      out[d]=daily;
+    });
+    models[r.m.id]=out;
+  });
+  acc.key=key;acc.data={start,end,truth,models,ms};
+  return acc.data;
+}
+function accStats(fc,truth){
+  let n=0,eMx=0,eMn=0,bMx=0,bMn=0,np=0,eP=0,hit=0,miss=0,fals=0,wet=0;
+  Object.entries(truth).forEach(([k,o])=>{
+    const f=fc[k];if(!f)return;
+    n++;eMx+=Math.abs(f.mx-o.mx);eMn+=Math.abs(f.mn-o.mn);bMx+=f.mx-o.mx;bMn+=f.mn-o.mn;
+    if(f.p!=null&&o.p!=null){np++;eP+=Math.abs(f.p-o.p);const fw=f.p>=1,ow=o.p>=1;if(ow)wet++;if(fw===ow)hit++;else if(ow)miss++;else fals++}
+  });
+  if(n<5)return null;
+  return{n,maeMx:eMx/n,maeMn:eMn/n,maeT:(eMx+eMn)/(2*n),bias:(bMx+bMn)/(2*n),np,maeP:np?eP/np:null,hitP:np?hit/np*100:null,miss,fals,wet};
+}
+function accRender(){
+  const D=acc.data;if(!D)return;
+  const lead=acc.lead,rows=[];
+  D.ms.forEach(m=>{const md=D.models[m.id];if(!md||md.err){rows.push({m,err:md?md.err:"nema podataka"});return}const st=accStats(md[lead]||{},D.truth);rows.push(st?{m,st}:{m,err:"premalo podataka za ovaj period"})});
+  // medijana modela kao poseban "model"
+  const medFc={};Object.keys(D.truth).forEach(k=>{const vs=D.ms.map(m=>D.models[m.id]?.[lead]?.[k]).filter(Boolean);if(vs.length>=3)medFc[k]={mx:median(vs.map(v=>v.mx)),mn:median(vs.map(v=>v.mn)),p:median(vs.map(v=>v.p).filter(v=>v!=null))}});
+  const medSt=accStats(medFc,D.truth);
+  const ok=rows.filter(r=>r.st);
+  if(!ok.length){$("#accOut").innerHTML='<div class="err-box">Nema dovoljno podataka o ranijim prognozama za ovu lokaciju i period. '+esc(rows.find(r=>r.err)?.err||"")+'</div>';return}
+  // rang: prosek ranga po temperaturi i po pogođenim kišnim danima
+  const rankBy=(arr,f,asc)=>{const s=[...arr].sort((a,b)=>asc?f(a)-f(b):f(b)-f(a));s.forEach((r,i)=>r["r_"+(asc?"a":"d")+f.name]=i+1)};
+  const fT=r=>r.st.maeT,fP=r=>r.st.hitP??0;
+  const sT=[...ok].sort((a,b)=>fT(a)-fT(b)),sP=[...ok].sort((a,b)=>fP(b)-fP(a));
+  ok.forEach(r=>{r.rank=(sT.indexOf(r)+1+sP.indexOf(r)+1)/2});
+  ok.sort((a,b)=>a.rank-b.rank||fT(a)-fT(b));
+  const bestT=sT[0],bestP=sP[0],bestAll=ok[0];
+  const col=(key,asc)=>{const v=ok.map(r=>r.st[key]).filter(x=>x!=null);return{best:asc?Math.min(...v):Math.max(...v),worst:asc?Math.max(...v):Math.min(...v)}};
+  const cMx=col("maeMx",1),cMn=col("maeMn",1),cP=col("maeP",1),cH=col("hitP",0);
+  const cls=(v,c)=>v==null?"":v===c.best?"best":v===c.worst?"worst":"";
+  const f1=v=>v==null?"–":(Math.round(v*10)/10).toLocaleString("sr-Latn");
+  const sg=v=>Math.abs(v)<0.05?"0":(v>0?"+":"")+f1(v);
+  const leadTxt=lead===1?"1 dan unapred":lead+" dana unapred";
+  const medBetter=medSt&&medSt.maeT<=bestT.st.maeT;
+  let h=`<div class="acc-sum">
+    <div class="htile"><span class="eyebrow">Najtačniji za temperaturu</span><span class="v">${esc(bestT.m.name)}</span><span class="d">prosečna greška ±${f1(bestT.st.maeT)} °C (${leadTxt})</span></div>
+    <div class="htile"><span class="eyebrow">Najbolje pogađa kišne dane</span><span class="v">${esc(bestP.m.name)}</span><span class="d">${f1(bestP.st.hitP)}% dana tačno (kiša da/ne, prag 1 mm)</span></div>
+    <div class="htile"><span class="eyebrow">Ukupno najbolji</span><span class="v">${esc(bestAll.m.name)}</span><span class="d">${medSt?`Medijana svih modela: ±${f1(medSt.maeT)} °C, ${f1(medSt.hitP)}% kišnih dana${medBetter?", bolja od svakog pojedinačnog za temperaturu":""}`:""}</span></div>
+  </div>
+  <div class="scroll"><table class="acct"><thead><tr><th>Model</th><th>Rang</th><th>Greška max. temp.</th><th>Greška min. temp.</th><th>Pristrasnost</th><th>Kišni dani pogođeni</th><th>Promašena kiša / lažna</th><th>Greška kiše</th><th>Dana</th></tr></thead><tbody>`;
+  ok.forEach((r,i)=>{const s=r.st;h+=`<tr class="${i===0?"top":""}"><td><span class="sw" style="background:var(${r.m.c})"></span>${esc(r.m.name)}</td><td><span class="rk">${i+1}</span></td>
+    <td class="${cls(s.maeMx,cMx)}">±${f1(s.maeMx)} °C</td><td class="${cls(s.maeMn,cMn)}">±${f1(s.maeMn)} °C</td>
+    <td title="Plus: model u proseku toplije od stvarnog; minus: hladnije">${sg(s.bias)} °C</td>
+    <td class="${cls(s.hitP,cH)}">${s.hitP==null?"–":f1(s.hitP)+"%"}</td><td>${s.miss} / ${s.fals}</td>
+    <td class="${cls(s.maeP,cP)}">${s.maeP==null?"–":"±"+f1(s.maeP)+" mm"}</td><td>${s.n}</td></tr>`});
+  if(medSt)h+=`<tr class="med"><td><span class="sw" style="background:var(--ink)"></span>Medijana modela</td><td>–</td><td>±${f1(medSt.maeMx)} °C</td><td>±${f1(medSt.maeMn)} °C</td><td>${sg(medSt.bias)} °C</td><td>${medSt.hitP==null?"–":f1(medSt.hitP)+"%"}</td><td>${medSt.miss} / ${medSt.fals}</td><td>${medSt.maeP==null?"–":"±"+f1(medSt.maeP)+" mm"}</td><td>${medSt.n}</td></tr>`;
+  rows.filter(r=>r.err).forEach(r=>{h+=`<tr><td><span class="sw" style="background:var(${r.m.c})"></span>${esc(r.m.name)}</td><td colspan="8" style="text-align:left;color:var(--muted)">nema arhive ranijih prognoza (${esc(r.err)})</td></tr>`});
+  const wetDays=ok[0].st.wet;
+  h+=`</tbody></table></div><p class="note" style="margin:8px 0 0">${esc(state.loc.name)}, ${fmtDate(D.start)}–${fmtDate(D.end)} (${Object.keys(D.truth).length} dana, od toga ${wetDays} kišnih). Zeleno je najbolje u koloni, crveno najlošije. „Promašena kiša“: padala je, a model je nije najavio. „Lažna“: najavio je, a nije padala. Kolone se mogu pomerati levo-desno.</p>`;
+  $("#accOut").innerHTML=h;
+}
+async function accRun(){
+  if(acc.busy)return;acc.busy=true;
+  $("#accOut").innerHTML='<div class="loading">Preuzimam ranije prognoze '+MODELS.filter(m=>!m.google).length+' modela i izmereno vreme za '+esc(state.loc.name)+'…</div>';
+  try{await accFetch();accRender()}
+  catch(e){$("#accOut").innerHTML='<div class="err-box">Analiza nije uspela: '+esc(e.message)+'. Proveri internet vezu i pokušaj ponovo.</div><button class="btn" type="button" id="accRun" style="margin-top:8px">Pokušaj ponovo</button>'}
+  finally{acc.busy=false}
+}
+$("#accOut").addEventListener("click",e=>{if(e.target.id==="accRun")accRun()});
+seg("#accLead",v=>{acc.lead=+v;if(acc.data)accRender()});
+seg("#accDays",v=>{acc.days=+v;if(acc.data){acc.data=null;accRun()}});
+
 /* ---------- locations ---------- */
 const quickN=()=>innerWidth<600?3:5;
 function renderSaved(){
@@ -1477,7 +1607,7 @@ $("#plist").addEventListener("click",e=>{
 document.addEventListener("click",e=>{if(!$("#plist").hidden&&!e.target.closest("#pwrap"))togglePlist(false)});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#plist").hidden){togglePlist(false);$("#pAll").focus()}});
 let rsT,lastNarrow=innerWidth<600;addEventListener("resize",()=>{clearTimeout(rsT);rsT=setTimeout(()=>{renderSaved();const n=innerWidth<600;if(n!==lastNarrow&&state.time.length){lastNarrow=n;renderMatrix()}},150)});
-function setLoc(l){state.loc=l;store.set("ap.loc",l);renderMini();hist.key=null;hist.cur=null;setTimeout(()=>loadHist(),50);$("#results").hidden=true;$("#q").value="";renderSaved();load()}
+function setLoc(l){state.loc=l;store.set("ap.loc",l);renderMini();accReset();hist.key=null;hist.cur=null;setTimeout(()=>loadHist(),50);$("#results").hidden=true;$("#q").value="";renderSaved();load()}
 $("#saved").addEventListener("click",e=>{
   const b=e.target.closest("[data-k]");if(b)setLoc(state.saved[+b.dataset.k]);
 });
