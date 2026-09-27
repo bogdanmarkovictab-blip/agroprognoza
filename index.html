@@ -509,7 +509,7 @@ const idb={
 };
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 const state={
-  loc:store.get("ap.loc",{name:"Novi Sad",sub:"Vojvodina, Srbija",lat:45.2517,lon:19.8369}),
+  loc:store.get("ap.loc",{name:"Kruševac",sub:"Rasinski okrug, Srbija",lat:43.5800,lon:21.3339}),
   saved:store.get("ap.saved",[]),
   enabled:new Set(store.get("ap.enabled",MODELS.map(m=>m.id))),
   mx:"all", cvar:"temp", range:4,
@@ -1320,9 +1320,32 @@ $("#mgr").addEventListener("click",async e=>{
 });
 
 /* start: ako je localStorage prazan, vrati parcele iz rezervne kopije */
+/* Početne lokacije tima (dodaju se jednom, ne dupliraju se, ne brišu ništa postojeće) */
+const TEAM_PARCELS=[
+  {name:"Kruševac",sub:"Rasinski okrug",lat:43.5800,lon:21.3339},
+  {name:"Gornji Milanovac",sub:"Moravički okrug",lat:44.0247,lon:20.4596},
+  {name:"Beograd",sub:"Grad Beograd",lat:44.8125,lon:20.4612},
+  {name:"Garevo",sub:"Veliko Gradište",lat:44.6094,lon:21.4459},
+  {name:"Vlaška",sub:"Mladenovac",lat:44.5003,lon:20.6873},
+  {name:"Latkovac",sub:"Aleksandrovac",lat:43.4800,lon:21.0472},
+  {name:"Sopot",sub:"Grad Beograd",lat:44.5196,lon:20.5754}
+];
+function migrateTeam(){
+  if(store.get("ap.mig.team1",false))return false;
+  const norm=x=>x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  const nearNS=p=>Math.abs(p.lat-45.2517)<0.15&&Math.abs(p.lon-19.8369)<0.2;
+  const ks=TEAM_PARCELS[0];
+  // ispravka: "Kruševac" koji je sačuvan sa koordinatama Novog Sada
+  state.saved.forEach(p=>{if(norm(p.name)==="krusevac"&&nearNS(p)){p.lat=ks.lat;p.lon=ks.lon;p.sub=ks.sub}});
+  if(norm(state.loc.name||"")==="krusevac"&&nearNS(state.loc))state.loc={...state.loc,lat:ks.lat,lon:ks.lon,sub:ks.sub};
+  TEAM_PARCELS.forEach(t=>{if(!state.saved.some(p=>norm(p.name)===norm(t.name)||(Math.abs(p.lat-t.lat)<0.01&&Math.abs(p.lon-t.lon)<0.01)))state.saved.push({...t})});
+  store.setLocal("ap.mig.team1",true);store.setLocal("ap.saved",state.saved);store.setLocal("ap.loc",state.loc);
+  return true;
+}
 (async()=>{
   if(!state.saved.length){const b=await idb.get("ap.saved");if(Array.isArray(b)&&b.length){state.saved=b;try{localStorage.setItem("ap.saved",JSON.stringify(b))}catch(e){}}}
   else idb.put("ap.saved",state.saved);
+  migrateTeam();
   const hadLoc=(()=>{try{return !!localStorage.getItem("ap.loc")}catch(e){return false}})();
   if(!hadLoc){const l=await idb.get("ap.loc");if(l&&typeof l.lat==="number")state.loc=l;else if(state.saved[0])state.loc=state.saved[0]}
   renderSaved();
