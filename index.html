@@ -285,7 +285,12 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
 .hrcol .ww.hi{color:var(--warn);font-weight:600}
 .hrcol.night{background:color-mix(in srgb,var(--ink) 4%,transparent)}
 .hrline{position:absolute;left:0;width:100%;pointer-events:none;z-index:0;overflow:visible}
-.hrline polyline{fill:none;stroke:var(--m4);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.hrline polyline{fill:none;stroke:var(--m4);stroke-width:2.4;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.hrline polyline.ec{stroke:var(--m1);stroke-width:2;stroke-dasharray:5 3}
+.hrcol .ecv{font-size:11px;font-weight:600;color:var(--m1);height:14px;line-height:14px}
+.hrcol .ecv.big{text-decoration:underline;text-underline-offset:2px}
+.hrleg{align-items:center}
+.hrleg .ln{display:inline-block;width:16px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
 .hrline circle{fill:var(--surface);stroke:var(--m4);stroke-width:1.6;vector-effect:non-scaling-stroke}
 #hourlyPanel{scroll-margin-top:72px}
 .trow{cursor:pointer}
@@ -809,7 +814,10 @@ function renderHourly(){
   $("#hrTitle").textContent=sel?dayLabel(sel,false).replace(/^./,c=>c.toUpperCase())+", po satima":"Narednih 24 h";
   const T=consensus("temperature_2m"),P=consensus("precipitation"),POP=consensus("precipitation_probability"),W=consensus("wind_speed_10m"),G=consensus("wind_gusts_10m"),C=consensus("weather_code"),RH=consensus("relative_humidity_2m");
   const act=activeModels();
-  const tv=idx.map(i=>T[i]).filter(v=>v!=null);
+  const ecOk=!!(state.models.ecmwf_ifs025&&state.models.ecmwf_ifs025.h);
+  const showEc=ecOk&&store.get("ap.hrEc",true);
+  const E=ecOk?series("ecmwf_ifs025","temperature_2m"):[];
+  const tv=idx.map(i=>T[i]).concat(showEc?idx.map(i=>E[i]):[]).filter(v=>v!=null);
   if(!tv.length){$("#hrScroll").innerHTML='<div class="loading">Nema podataka za ovaj dan.</div>';return}
   const lo=Math.min(...tv),hi=Math.max(...tv),span=Math.max(1,hi-lo);
   const Y=v=>6+(1-(v-lo)/span)*46; // px od vrha zone temperature (74px)
@@ -817,12 +825,14 @@ function renderHourly(){
   const cols=idx.map((i,k)=>{
     const t=state.time[i],h=hourOf(t),v=T[i];const night=h<6||h>=20;
     const rng=act.map(m=>series(m.id,"temperature_2m")?.[i]).filter(x=>x!=null);
-    const tip=`${dayLabel(t)} ${t.slice(11,16)} · ${v==null?"–":r1(v)+" °C"}${rng.length>1?` (modeli ${r1(Math.min(...rng))}–${r1(Math.max(...rng))})`:""} · vlažnost ${r0(RH[i])}% · vetar ${r0(W[i])} km/h, udari ${r0(G[i])}${P[i]>=0.1?` · kiša ${r1(P[i])} mm`:""}${POP[i]!=null?` · verovatnoća ${r0(POP[i])}%`:""}`;
+    const ev=ecOk?E[i]:null,dv=ev!=null&&v!=null?ev-v:null;
+    const tip=`${dayLabel(t)} ${t.slice(11,16)} · medijana ${v==null?"–":r1(v)+" °C"}${ev!=null?` · ECMWF ${r1(ev)} °C (${dv>0?"+":""}${r1(dv)})`:""}${rng.length>1?` (modeli ${r1(Math.min(...rng))}–${r1(Math.max(...rng))})`:""} · vlažnost ${r0(RH[i])}% · vetar ${r0(W[i])} km/h, udari ${r0(G[i])}${P[i]>=0.1?` · kiša ${r1(P[i])} mm`:""}${POP[i]!=null?` · verovatnoća ${r0(POP[i])}%`:""}`;
     const rain=(P[i]||0)>=0.1?r1(P[i]):(POP[i]!=null&&POP[i]>=20?r0(POP[i])+"%":"");
     const label=!sel&&k===0?"Sada":(h===0&&!sel?DOW[dateOf(t).getUTCDay()]:String(h).padStart(2,"0")+"h");
     return `<div class="hrcol ${h===0&&k>0?"nd":""} ${night?"night":""}" title="${esc(tip)}">
       <span class="hh ${!sel&&k===0?"cur":""}">${label}</span>${icon(nearCode(C[i])).replace("<svg","<svg class='ic'")}
       <div class="tz">${v==null?"":`<span class="tv" style="top:${(Y(v)-18).toFixed(1)}px">${Math.round(v)}°</span>`}</div>
+      ${showEc?`<span class="ecv ${dv!=null&&Math.abs(dv)>=2?"big":""}" title="ECMWF IFS${dv!=null?`, odstupanje ${dv>0?"+":""}${r1(dv)} °C`:""}">${ev==null?"–":Math.round(ev)+"°"}</span>`:""}
       <span class="rr">${rain}</span>
       <div class="rbox">${(P[i]||0)>=0.1?`<div class="rbar" style="height:${Math.max(2,(P[i]/pmax)*16)}px"></div>`:""}</div>
       <span class="ww ${(G[i]||0)>=30?"hi":""}">${r0(W[i])}</span>
@@ -831,9 +841,15 @@ function renderHourly(){
   // linija temperature preko kolona (koordinate u % širine)
   const n=idx.length;const pts=idx.map((i,k)=>T[i]==null?null:[(k+0.5)/n*100,Y(T[i])]).filter(Boolean);
   const top=4+12+2+24+2; // visina sata + ikone
-  const svg=`<svg class="hrline" style="top:${top}px;height:74px" viewBox="0 0 100 74" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts.map(p=>p[0].toFixed(2)+","+p[1].toFixed(1)).join(" ")}"/></svg>`;
-  $("#hrScroll").innerHTML=`<div class="hrgrid">${svg}${cols}</div><div class="legend" style="margin-top:6px"><span>Medijana modela</span><span>Plavo: kiša (mm ili verovatnoća)</span><span>Donji red: vetar km/h</span><span>Zatamnjeno: noć</span></div>`;
+  const ept=showEc?idx.map((i,k)=>E[i]==null?null:[(k+0.5)/n*100,Y(E[i])]).filter(Boolean):[];
+  const pl=(a,cls)=>a.length?`<polyline class="${cls}" points="${a.map(p=>p[0].toFixed(2)+","+p[1].toFixed(1)).join(" ")}"/>`:"";
+  const svg=`<svg class="hrline" style="top:${top}px;height:74px" viewBox="0 0 100 74" preserveAspectRatio="none" aria-hidden="true">${pl(ept,"ec")}${pl(pts,"md")}</svg>`;
+  $("#hrScroll").innerHTML=`<div class="hrgrid">${svg}${cols}</div><div class="legend hrleg" style="margin-top:8px">
+    <span><i class="ln" style="background:var(--m4)"></i>Medijana modela</span>
+    ${ecOk?`<button type="button" class="tog" id="hrEcTog" aria-pressed="${showEc}"><span class="sw" style="background:var(--m1)"></span>ECMWF IFS ${showEc?"uključen · plavi brojevi":"isključen"}</button>`:""}
+    <span>Kiša: mm ili verovatnoća, iznad stubića</span><span>Donji red: vetar km/h</span><span>Zatamnjeno: noć</span></div>`;
 }
+$("#hrScroll").addEventListener("click",e=>{if(e.target.closest("#hrEcTog")){const x=$("#hrScroll").scrollLeft;store.setLocal("ap.hrEc",!store.get("ap.hrEc",true));renderHourly();$("#hrScroll").scrollLeft=x}});
 $("#hrDays").addEventListener("click",e=>{const b=e.target.closest("[data-hd]");if(!b)return;state.hrDay=b.dataset.hd||null;renderHourly();renderTen();b.scrollIntoView({block:"nearest",inline:"nearest"});$("#hrScroll").scrollLeft=0});
 $("#ten").addEventListener("click",e=>{const r=e.target.closest(".trow[data-day]");if(!r)return;state.hrDay=r.dataset.day;renderHourly();renderTen();$("#hrScroll").scrollLeft=0;$("#hourlyPanel").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"})});
 $("#ten").addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.closest(".trow[data-day]")){e.preventDefault();e.target.click()}});
