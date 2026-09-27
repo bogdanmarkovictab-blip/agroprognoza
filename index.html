@@ -290,6 +290,10 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
 .hrcol .ecv{font-size:11px;font-weight:600;color:var(--m1);height:14px;line-height:14px}
 .hrcol .ecv.big{text-decoration:underline;text-underline-offset:2px}
 .hrleg{align-items:center}
+.hrcol .spd{display:block;width:72%;height:7px;border:0;padding:0;border-radius:4px;margin-top:4px;cursor:pointer}
+.hrcol .spd.good{background:var(--good)} .hrcol .spd.warn{background:var(--warn)} .hrcol .spd.bad{background:var(--bad);opacity:.85} .hrcol .spd.na{background:var(--line-2)}
+.hrcol .spd:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.tog .sw.sp3{background:linear-gradient(90deg,var(--good) 0 33%,var(--warn) 33% 66%,var(--bad) 66%);height:5px;width:18px}
 .hrleg .ln{display:inline-block;width:16px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
 .hrline circle{fill:var(--surface);stroke:var(--m4);stroke-width:1.6;vector-effect:non-scaling-stroke}
 #hourlyPanel{scroll-margin-top:72px}
@@ -817,6 +821,8 @@ function renderHourly(){
   const ecOk=!!(state.models.ecmwf_ifs025&&state.models.ecmwf_ifs025.h);
   const showEc=ecOk&&store.get("ap.hrEc",true);
   const E=ecOk?series("ecmwf_ifs025","temperature_2m"):[];
+  const showSp=store.get("ap.hrSp",true);
+  const SC=showSp?{t:T,rh:RH,w:W,g:G,p:P,pop:POP}:null;
   const tv=idx.map(i=>T[i]).concat(showEc?idx.map(i=>E[i]):[]).filter(v=>v!=null);
   if(!tv.length){$("#hrScroll").innerHTML='<div class="loading">Nema podataka za ovaj dan.</div>';return}
   const lo=Math.min(...tv),hi=Math.max(...tv),span=Math.max(1,hi-lo);
@@ -836,6 +842,7 @@ function renderHourly(){
       <span class="rr">${rain}</span>
       <div class="rbox">${(P[i]||0)>=0.1?`<div class="rbar" style="height:${Math.max(2,(P[i]/pmax)*16)}px"></div>`:""}</div>
       <span class="ww ${(G[i]||0)>=30?"hi":""}">${r0(W[i])}</span>
+      ${showSp?(()=>{const q=sprayRate(i,SC);const lbl={good:"Povoljno za prskanje",warn:"Uslovno za prskanje",bad:"Nepovoljno za prskanje",na:"Nema podataka"}[q.r];const why=q.r!=="good"&&q.why&&q.why.length?": "+q.why.join("; "):"";return `<button type="button" class="spd ${q.r}" data-sp="${esc(dayLabel(t)+" "+t.slice(11,16)+" · "+lbl+why)}" title="${esc(lbl+why)}" aria-label="${esc(t.slice(11,16)+" "+lbl)}"></button>`})():""}
     </div>`;
   }).join("");
   // linija temperature preko kolona (koordinate u % širine)
@@ -847,9 +854,13 @@ function renderHourly(){
   $("#hrScroll").innerHTML=`<div class="hrgrid">${svg}${cols}</div><div class="legend hrleg" style="margin-top:8px">
     <span><i class="ln" style="background:var(--m4)"></i>Medijana modela</span>
     ${ecOk?`<button type="button" class="tog" id="hrEcTog" aria-pressed="${showEc}"><span class="sw" style="background:var(--m1)"></span>ECMWF IFS ${showEc?"uključen · plavi brojevi":"isključen"}</button>`:""}
-    <span>Kiša: mm ili verovatnoća, iznad stubića</span><span>Donji red: vetar km/h</span><span>Zatamnjeno: noć</span></div>`;
+    <button type="button" class="tog" id="hrSpTog" aria-pressed="${showSp}"><span class="sw sp3"></span>Prskanje ${showSp?"uključeno":"isključeno"}</button>
+    <span>Kiša: mm ili verovatnoća, iznad stubića</span><span>Ispod kiše: vetar km/h</span><span>Zatamnjeno: noć</span></div>`;
 }
-$("#hrScroll").addEventListener("click",e=>{if(e.target.closest("#hrEcTog")){const x=$("#hrScroll").scrollLeft;store.setLocal("ap.hrEc",!store.get("ap.hrEc",true));renderHourly();$("#hrScroll").scrollLeft=x}});
+$("#hrScroll").addEventListener("click",e=>{
+  const d=e.target.closest(".spd");if(d){toast(esc(d.dataset.sp),5000);return}
+  if(e.target.closest("#hrSpTog")){const x=$("#hrScroll").scrollLeft;store.setLocal("ap.hrSp",!store.get("ap.hrSp",true));renderHourly();$("#hrScroll").scrollLeft=x;return}
+  if(e.target.closest("#hrEcTog")){const x=$("#hrScroll").scrollLeft;store.setLocal("ap.hrEc",!store.get("ap.hrEc",true));renderHourly();$("#hrScroll").scrollLeft=x}});
 $("#hrDays").addEventListener("click",e=>{const b=e.target.closest("[data-hd]");if(!b)return;state.hrDay=b.dataset.hd||null;renderHourly();renderTen();b.scrollIntoView({block:"nearest",inline:"nearest"});$("#hrScroll").scrollLeft=0});
 $("#ten").addEventListener("click",e=>{const r=e.target.closest(".trow[data-day]");if(!r)return;state.hrDay=r.dataset.day;renderHourly();renderTen();$("#hrScroll").scrollLeft=0;$("#hourlyPanel").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"})});
 $("#ten").addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.closest(".trow[data-day]")){e.preventDefault();e.target.click()}});
