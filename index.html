@@ -149,7 +149,14 @@ button{cursor:pointer}
 
 /* matrix */
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table.mx{border-collapse:separate;border-spacing:0;min-width:100%;font-variant-numeric:tabular-nums}
+table.mx{border-collapse:separate;border-spacing:0;table-layout:fixed;font-variant-numeric:tabular-nums}
+/* zakucano zaglavlje tabele modela: izbor prikaza + datumi */
+.mxhead{position:sticky;top:var(--stick-top,0px);z-index:6;background:var(--surface);display:flex;flex-direction:column;gap:10px;padding-top:8px;margin-top:-8px;transition:top .2s ease}
+.mxhscroll{overflow-x:auto;scrollbar-width:none}
+.mxhscroll::-webkit-scrollbar{display:none}
+.mxhead.stuck{box-shadow:0 6px 10px -8px rgba(0,0,0,.35)}
+.mx .ghost-head th{padding-top:0;padding-bottom:0;border:0;height:0;line-height:0;font-size:0;visibility:hidden}
+.mx .ghost-head th *{display:none}
 .mx th,.mx td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
 .mx thead th{font-weight:600;font-size:12px;color:var(--ink-2);position:sticky;top:0;background:var(--surface)}
 .mx thead th .d{display:block;font-family:var(--display);font-size:17px;color:var(--ink)}
@@ -169,7 +176,8 @@ table.mx{border-collapse:separate;border-spacing:0;min-width:100%;font-variant-n
 .mx td.na{color:var(--muted);font-size:12px}
 .mx tr.cons th,.mx tr.cons td{background:var(--accent-soft);border-bottom:0}
 .mx tr.cons th.mname{background:var(--accent-soft)}
-.agree{font-size:10.5px;font-weight:600;margin-top:2px}
+.agree{font-size:10.5px;font-weight:600;margin-top:2px;white-space:normal;line-height:1.2}
+.cell .w{white-space:normal;line-height:1.2}
 .agree.good{color:var(--good)} .agree.warn{color:var(--warn)} .agree.bad{color:var(--bad)}
 .mx tr.err td{color:var(--muted);font-size:12px;text-align:left}
 .mx .hl{background:color-mix(in srgb,var(--rain) 9%,transparent)}
@@ -356,12 +364,15 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
       <h2>Modeli po danima</h2>
       <p>Svaki red je drugi meteorološki model. Zeleni red je medijana svih uključenih modela. Oznaka „slaganje“ pokazuje koliko se modeli razilaze u maksimalnoj temperaturi.</p>
     </div>
+  </div>
+  <div class="mxhead" id="mxHead">
     <div class="seg" id="mxMode" role="group" aria-label="Prikaz u tabeli">
       <button type="button" data-v="all" aria-pressed="true">Sve</button>
       <button type="button" data-v="temp" aria-pressed="false">Temp.</button>
       <button type="button" data-v="rain" aria-pressed="false">Padavine</button>
       <button type="button" data-v="wind" aria-pressed="false">Vetar</button>
     </div>
+    <div class="mxhscroll" id="mxHeadScroll" aria-hidden="true"></div>
   </div>
   <div class="scroll" id="matrix"><div class="loading">Učitavam prognoze…</div></div>
 </section>
@@ -755,9 +766,14 @@ function renderMatrix(){
     if(mode==="wind")h+=`<div class="t"><b>${r0(o.w)}</b> <span>/ ${r0(o.g)}</span></div><div class="w">km/h, udari</div>`;
     return `<td class="${!dry&&(mode==="all"||mode==="rain")?"hl":""}">${h}${extra}</div></td>`;
   };
-  let h='<table class="mx"><thead><tr><th class="mname">Model</th>';
-  days.forEach(d=>{h+=`<th class="${d===today?"today":""}"><span class="d">${d===today?"Danas":DOW[dateOf(d).getUTCDay()]}</span>${dateOf(d).getUTCDate()}.${dateOf(d).getUTCMonth()+1}.</th>`});
-  h+='</tr></thead><tbody>';
+  const narrow=innerWidth<600,cw0=narrow?104:150,cw=narrow?78:92;
+  const tw=`width:max(100%,${cw0+days.length*cw}px)`;
+  const cols=`<colgroup><col style="width:${cw0}px">${days.map(()=>`<col style="width:${cw}px">`).join("")}</colgroup>`;
+  let head='<tr><th class="mname">Model</th>';
+  days.forEach(d=>{head+=`<th class="${d===today?"today":""}"><span class="d">${d===today?"Danas":DOW[dateOf(d).getUTCDay()]}</span>${dateOf(d).getUTCDate()}.${dateOf(d).getUTCMonth()+1}.</th>`});
+  head+='</tr>';
+  $("#mxHeadScroll").innerHTML=`<table class="mx" style="${tw}">${cols}<thead>${head}</thead></table>`;
+  let h=`<table class="mx" style="${tw}">${cols}<thead class="ghost-head">${head}</thead><tbody>`;
   MODELS.forEach(m=>{
     if(!state.enabled.has(m.id))return;
     const st=state.models[m.id];
@@ -1004,7 +1020,7 @@ function renderMini(){
 }
 (function(){
   const mini=$("#mini");
-  const set=v=>{mini.classList.toggle("show",v);mini.setAttribute("aria-hidden",String(!v))};
+  const set=v=>{mini.classList.toggle("show",v);mini.setAttribute("aria-hidden",String(!v));document.documentElement.style.setProperty("--stick-top",v?mini.offsetHeight+"px":"env(safe-area-inset-top, 0px)")};
   if("IntersectionObserver" in window){
     new IntersectionObserver(es=>set(!es[0].isIntersecting),{threshold:0}).observe($("#now"));
   }
@@ -1243,6 +1259,15 @@ $("#hCsv").addEventListener("click",()=>{
 });
 if("IntersectionObserver" in window){new IntersectionObserver(es=>{if(es[0].isIntersecting&&!hist.seen){hist.seen=true;loadHist()}},{rootMargin:"300px"}).observe($("#hist"))}else{hist.seen=true}
 
+/* sinhronizacija horizontalnog pomeranja: zaglavlje prati tabelu i obrnuto */
+(function(){
+  const a=$("#matrix"),b=$("#mxHeadScroll");let lock=false;
+  const sync=(from,to)=>()=>{if(lock)return;lock=true;to.scrollLeft=from.scrollLeft;requestAnimationFrame(()=>lock=false)};
+  a.addEventListener("scroll",sync(a,b),{passive:true});b.addEventListener("scroll",sync(b,a),{passive:true});
+  const head=$("#mxHead");
+  addEventListener("scroll",()=>{const top=parseFloat(getComputedStyle(head).top)||0;head.classList.toggle("stuck",head.getBoundingClientRect().top<=top+1&&a.getBoundingClientRect().top<top+head.offsetHeight)},{passive:true});
+})();
+
 /* ---------- locations ---------- */
 const quickN=()=>innerWidth<600?3:5;
 function renderSaved(){
@@ -1281,7 +1306,7 @@ $("#plist").addEventListener("click",e=>{
 });
 document.addEventListener("click",e=>{if(!$("#plist").hidden&&!e.target.closest("#pwrap"))togglePlist(false)});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#plist").hidden){togglePlist(false);$("#pAll").focus()}});
-let rsT;addEventListener("resize",()=>{clearTimeout(rsT);rsT=setTimeout(renderSaved,150)});
+let rsT,lastNarrow=innerWidth<600;addEventListener("resize",()=>{clearTimeout(rsT);rsT=setTimeout(()=>{renderSaved();const n=innerWidth<600;if(n!==lastNarrow&&state.time.length){lastNarrow=n;renderMatrix()}},150)});
 function setLoc(l){state.loc=l;store.set("ap.loc",l);renderMini();hist.key=null;hist.cur=null;setTimeout(()=>loadHist(),50);$("#results").hidden=true;$("#q").value="";renderSaved();load()}
 $("#saved").addEventListener("click",e=>{
   const b=e.target.closest("[data-k]");if(b)setLoc(state.saved[+b.dataset.k]);
