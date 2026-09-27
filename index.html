@@ -186,7 +186,15 @@ table.mx{border-collapse:separate;border-spacing:0;min-width:100%;font-variant-n
 .grid2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:18px}
 .spray{display:flex;flex-direction:column;gap:6px}
 .sprayrow{display:grid;grid-template-columns:repeat(72,minmax(0,1fr));gap:1px;height:34px}
-.sprayrow div{border-radius:2px}
+.sprayrow div{border-radius:2px;cursor:pointer}
+.sprayrow div.sel{outline:2px solid var(--ink);outline-offset:1px;position:relative;z-index:1}
+.spray{position:relative}
+.stip{position:absolute;z-index:30;width:min(300px,calc(100vw - 48px));background:var(--surface);border:1px solid var(--line-2);border-left-width:4px;border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.18);padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:13px;pointer-events:none}
+.stip.good{border-left-color:var(--good)} .stip.warn{border-left-color:var(--warn)} .stip.bad{border-left-color:var(--bad)}
+.stip .h{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600}
+.stip ul{margin:0;padding-left:18px;color:var(--ink)}
+.stip .vals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px 8px;color:var(--ink-2);font-size:12px;font-variant-numeric:tabular-nums}
+.stip .rule{color:var(--muted);font-size:11.5px;border-top:1px solid var(--line);padding-top:6px}
 .sprayrow .good{background:var(--good)} .sprayrow .warn{background:var(--warn)} .sprayrow .bad{background:var(--bad);opacity:.8}
 .sprayrow .night{box-shadow:inset 0 -6px 0 rgba(0,0,0,.28)}
 .sprayaxis{display:grid;grid-template-columns:repeat(72,minmax(0,1fr));font-size:10.5px;color:var(--muted);height:16px}
@@ -394,6 +402,7 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
     </div>
     <div class="spray">
       <div class="sprayrow" id="sprayRow"></div>
+      <div class="stip" id="sprayTip" hidden role="status"></div>
       <div class="sprayaxis" id="sprayAxis"></div>
       <div class="legend">
         <span><i style="background:var(--good)"></i>Povoljno</span>
@@ -827,20 +836,20 @@ function sprayRate(i,C){
   const pop=C.pop[i];
   const dT=RH!=null?T-wetBulb(T,RH):null;
   let r="good";
-  if(rainNow){r="bad";why.push("kiša u naredna 2 h")}
-  if(pop!=null&&pop>=50){r="bad";why.push("verovatnoća kiše "+Math.round(pop)+"%")}
-  if(W>20||(G!=null&&G>30)){r="bad";why.push("jak vetar")}
-  if(T>30||T<5){r="bad";why.push(T>30?"previše toplo":"prehladno")}
-  if(dT!=null&&dT>10){r="bad";why.push("Delta T "+r1(dT)+" (brzo isparavanje)")}
+  if(rainNow){r="bad";why.push("kiša u tom ili naredna 2 sata (sredstvo se spira)")}
+  if(pop!=null&&pop>=50){r="bad";why.push("verovatnoća kiše "+Math.round(pop)+"% (50% ili više)")}
+  if(W>20||(G!=null&&G>30)){r="bad";why.push(W>20?"vetar "+Math.round(W)+" km/h (iznad 20, zanošenje)":"udari "+Math.round(G)+" km/h (iznad 30, zanošenje)")}
+  if(T>30||T<5){r="bad";why.push(T>30?"temperatura "+Math.round(T)+" °C (iznad 30, isparavanje i ožegotine)":"temperatura "+Math.round(T)+" °C (ispod 5, slabo delovanje)")}
+  if(dT!=null&&dT>10){r="bad";why.push("Delta T "+dT.toFixed(1).replace(".",",")+" (iznad 10, kapi isparavaju pre nego što padnu)")}
   if(r!=="bad"){
-    if(W<3){r="warn";why.push("slab vetar, rizik inverzije")}
-    if(W>12){r="warn";why.push("vetar "+Math.round(W)+" km/h")}
-    if(G!=null&&G>20){r="warn";why.push("udari "+Math.round(G)+" km/h")}
-    if(dT!=null&&(dT>8||dT<2)){r="warn";why.push("Delta T "+r1(dT))}
-    if(T>27||T<8){r="warn";why.push("temperatura "+Math.round(T)+"°")}
-    if(pop!=null&&pop>=30){r="warn";why.push("verovatnoća kiše "+Math.round(pop)+"%")}
+    if(W<3){r="warn";why.push("vetar "+Math.round(W)+" km/h (ispod 3, rizik od inverzije i lebdenja kapi)")}
+    if(W>12){r="warn";why.push("vetar "+Math.round(W)+" km/h (12–20, pojačano zanošenje)")}
+    if(G!=null&&G>20){r="warn";why.push("udari "+Math.round(G)+" km/h (20–30)")}
+    if(dT!=null&&(dT>8||dT<2)){r="warn";why.push("Delta T "+dT.toFixed(1).replace(".",",")+(dT<2?" (ispod 2, sporo sušenje i slivanje)":" (8–10, brže isparavanje)"))}
+    if(T>27||T<8){r="warn";why.push("temperatura "+Math.round(T)+" °C"+(T>27?" (27–30, toplo)":" (5–8, hladno)"))}
+    if(pop!=null&&pop>=30){r="warn";why.push("verovatnoća kiše "+Math.round(pop)+"% (30–50%)")}
   }
-  return{r,why,T,W,G,dT};
+  return{r,why,T,W,G,dT,RH,P:P[i],pop};
 }
 function sprayData(){
   const C={t:consensus("temperature_2m"),rh:consensus("relative_humidity_2m"),w:consensus("wind_speed_10m"),g:consensus("wind_gusts_10m"),p:consensus("precipitation"),pop:consensus("precipitation_probability"),day:series(activeModels()[0]?.id,"is_day")};
@@ -848,6 +857,40 @@ function sprayData(){
   for(let i=s;i<Math.min(s+72,state.time.length);i++){const h=hourOf(state.time[i]);out.push({i,t:state.time[i],night:h<6||h>=20,...sprayRate(i,C)})}
   return out;
 }
+const SPRAY_TXT={
+  good:{t:"Povoljno",lead:"Svi uslovi su ispunjeni za prskanje.",rule:"Povoljno: vetar 3–12 km/h, udari do 20, temperatura 8–27 °C, Delta T 2–8, bez kiše u tom i naredna 2 sata, verovatnoća kiše ispod 30%."},
+  warn:{t:"Uslovno",lead:"Može, ali uz oprez zbog:",rule:"Uslovno kad je vetar ispod 3 ili 12–20 km/h, udari 20–30, Delta T ispod 2 ili 8–10, temperatura 5–8 ili 27–30 °C, verovatnoća kiše 30–50%."},
+  bad:{t:"Nepovoljno",lead:"Ne prskati zbog:",rule:"Nepovoljno: kiša u tom ili naredna 2 sata, verovatnoća kiše od 50%, vetar iznad 20 km/h ili udari iznad 30, temperatura ispod 5 ili iznad 30 °C, Delta T iznad 10."},
+  na:{t:"Nema podataka",lead:"Modeli nemaju podatke za ovaj sat.",rule:""}
+};
+function showSprayTip(k){
+  const sd=state._spray?.sd;const x=sd&&sd[k];const tip=$("#sprayTip");if(!x){tip.hidden=true;return}
+  const d=SPRAY_TXT[x.r]||SPRAY_TXT.na;
+  const vals=[["Temp.",x.T!=null?r1(x.T)+" °C":"–"],["Vetar",x.W!=null?r0(x.W)+" km/h":"–"],["Udari",x.G!=null?r0(x.G)+" km/h":"–"],["Vlažnost",x.RH!=null?r0(x.RH)+"%":"–"],["Delta T",x.dT!=null?x.dT.toFixed(1).replace(".",","):"–"],["Kiša",x.P!=null?(x.P<0.05?"0":r1(x.P))+" mm"+(x.pop!=null?" · "+r0(x.pop)+"%":""):"–"]];
+  tip.className="stip "+x.r;
+  tip.innerHTML=`<div class="h"><span>${dayLabel(x.t)} · ${x.t.slice(11,16)}–${String(hourOf(x.t)+1).padStart(2,"0")}:00${x.night?" (noć)":""}</span><span class="pill ${x.r==="na"?"info":x.r}">${d.t}</span></div>
+    <div>${d.lead}</div>${x.why&&x.why.length&&x.r!=="good"?"<ul>"+x.why.map(w=>"<li>"+esc(w)+"</li>").join("")+"</ul>":""}
+    <div class="vals">${vals.map(([a,b])=>`<span>${a}<br><b style="color:var(--ink)">${b}</b></span>`).join("")}</div>
+    ${d.rule?`<div class="rule">${d.rule}</div>`:""}`;
+  tip.hidden=false;
+  const row=$("#sprayRow"),cell=row.children[k],wrap=row.parentElement;
+  document.querySelectorAll("#sprayRow .sel").forEach(e=>e.classList.remove("sel"));cell.classList.add("sel");
+  const wr=wrap.getBoundingClientRect(),cr=cell.getBoundingClientRect(),tw=tip.offsetWidth;
+  let left=cr.left-wr.left+cr.width/2-tw/2;left=Math.max(0,Math.min(left,wr.width-tw));
+  tip.style.left=left+"px";tip.style.top=(cr.bottom-wr.top+8)+"px";
+}
+function hideSprayTip(){$("#sprayTip").hidden=true;document.querySelectorAll("#sprayRow .sel").forEach(e=>e.classList.remove("sel"))}
+(function(){
+  const row=$("#sprayRow");
+  const cellAt=e=>{const el=document.elementFromPoint(e.clientX,e.clientY);return el&&el.closest("#sprayRow [data-si]")};
+  row.addEventListener("pointermove",e=>{if(e.pointerType!=="mouse")return;const c=cellAt(e);if(c)showSprayTip(+c.dataset.si)});
+  row.addEventListener("pointerleave",e=>{if(e.pointerType==="mouse")hideSprayTip()});
+  // telefon: dodir prikazuje opis, prevlačenje prstom menja sat, dodir van trake zatvara
+  row.addEventListener("pointerdown",e=>{if(e.pointerType==="mouse")return;const c=cellAt(e);if(c){showSprayTip(+c.dataset.si)}});
+  row.addEventListener("touchmove",e=>{const t=e.touches[0];const el=document.elementFromPoint(t.clientX,t.clientY);const c=el&&el.closest("#sprayRow [data-si]");if(c){e.preventDefault();showSprayTip(+c.dataset.si)}},{passive:false});
+  document.addEventListener("pointerdown",e=>{if(e.pointerType!=="mouse"&&!e.target.closest("#sprayRow"))hideSprayTip()});
+  addEventListener("resize",hideSprayTip);
+})();
 function sprayWindows(sd){
   const w=[];let cur=null;
   sd.forEach(x=>{
@@ -859,7 +902,8 @@ function sprayWindows(sd){
 }
 function renderSpray(){
   const sd=sprayData();
-  $("#sprayRow").innerHTML=sd.map(x=>`<div class="${x.r} ${x.night?"night":""}" title="${esc(dayLabel(x.t)+" "+x.t.slice(11,16)+": "+({good:"povoljno",warn:"uslovno",bad:"nepovoljno",na:"nema podataka"}[x.r])+(x.why&&x.why.length?" ("+x.why.join(", ")+")":"")+(x.W!=null?` · vetar ${Math.round(x.W)} km/h`:"")+(x.dT!=null?` · ΔT ${r1(x.dT)}`:""))}"></div>`).join("");
+  $("#sprayRow").innerHTML=sd.map((x,k)=>`<div class="${x.r} ${x.night?"night":""}" data-si="${k}" role="button" tabindex="-1" aria-label="${esc(dayLabel(x.t)+" "+x.t.slice(11,16)+", "+({good:"povoljno",warn:"uslovno",bad:"nepovoljno",na:"nema podataka"}[x.r]))}"></div>`).join("");
+  $("#sprayTip").hidden=true;
   $("#sprayAxis").innerHTML=sd.map((x,k)=>{const h=hourOf(x.t);return h%6===0?`<span style="grid-column:${k+1}/span 6">${h===0?DOW[dateOf(x.t).getUTCDay()]:h+"h"}</span>`:""}).join("");
   const wins=sprayWindows(sd);
   $("#windows").innerHTML=wins.length?wins.slice(0,4).map(w=>{
