@@ -77,6 +77,23 @@ button{cursor:pointer}
 .chip{display:inline-flex;align-items:center;gap:6px;height:30px;border:1px solid var(--line-2);background:var(--surface);border-radius:15px;padding:0 10px;font-size:13px}
 .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:600}
 .chip .x{border:0;background:none;padding:0 2px 0 8px;margin-left:2px;border-left:1px solid var(--line-2);color:var(--muted);font-size:15px;line-height:1;height:18px}
+.pwrap{position:relative}
+.chip.pall{font-weight:600;gap:4px}
+.chip.pall::after{content:"";width:7px;height:7px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(45deg) translateY(-2px);margin-left:4px}
+.chip.pall[aria-expanded="true"]::after{transform:rotate(-135deg) translateY(-1px)}
+.plist{position:absolute;top:36px;left:0;z-index:35;width:min(340px,calc(100vw - 32px));max-height:min(60vh,420px);display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line-2);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.18);overflow:hidden}
+.plist input{margin:8px;height:36px;border:1px solid var(--line-2);border-radius:8px;padding:0 10px;background:var(--bg);color:var(--ink)}
+.plist ul{list-style:none;margin:0;padding:0 0 4px;overflow-y:auto}
+.plist li{display:flex;align-items:center;border-top:1px solid var(--line)}
+.plist li.cur{background:var(--accent-soft)}
+.plist .pick{flex:1;min-width:0;border:0;background:none;text-align:left;padding:9px 12px;color:var(--ink)}
+.plist .pick b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plist .pick small{display:block;color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plist .pick:hover{background:var(--surface-2)}
+.plist .x{position:relative;overflow:hidden;border:0;background:none;color:var(--muted);font-size:17px;width:44px;align-self:stretch}
+.plist .x .hold-fill{animation:none}
+.plist .x.holding .hold-fill{animation:holdfill var(--hold,3s) linear forwards}
+.plist .hint{padding:8px 12px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--line)}
 /* brisanje držanjem */
 [data-hold]{position:relative;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .chip:has(.x.holding){border-color:var(--bad)}
@@ -298,6 +315,7 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
   </div>
   <div class="bar-row">
     <div class="chips" id="saved"></div>
+    <div class="pwrap" id="pwrap" hidden><button class="chip pall" id="pAll" type="button" aria-expanded="false" aria-controls="plist"></button><div class="plist" id="plist" hidden></div></div>
     <div class="savebox" id="savebox">
       <button class="chip" id="saveBtn" type="button">+ Sačuvaj parcelu</button>
     </div>
@@ -1125,13 +1143,46 @@ $("#hCsv").addEventListener("click",()=>{
 if("IntersectionObserver" in window){new IntersectionObserver(es=>{if(es[0].isIntersecting&&!hist.seen){hist.seen=true;loadHist()}},{rootMargin:"300px"}).observe($("#hist"))}else{hist.seen=true}
 
 /* ---------- locations ---------- */
+const quickN=()=>innerWidth<600?3:5;
 function renderSaved(){
-  const cur=state.loc;
-  $("#saved").innerHTML=state.saved.map((p,k)=>`<span class="chip" aria-pressed="${Math.abs(p.lat-cur.lat)<1e-4&&Math.abs(p.lon-cur.lon)<1e-4}"><button type="button" data-k="${k}" style="border:0;background:none;padding:0;font:inherit;color:inherit">${esc(p.name)}</button><button type="button" class="x" data-del="${k}" data-hold aria-label="Drži 3 sekunde da obrišeš ${esc(p.name)}" title="Drži 3 sekunde za brisanje">×</button><span class="hold-fill"></span></span>`).join("");
+  const cur=state.loc,N=state.saved.length,Q=quickN();
+  const isCur=p=>Math.abs(p.lat-cur.lat)<1e-4&&Math.abs(p.lon-cur.lon)<1e-4;
+  // na ekranu: prvih Q parcela, a ako je izabrana neka iz menija, i ona
+  let show=state.saved.map((p,k)=>({p,k})).slice(0,N>Q?Q-1:Q);
+  const ci=state.saved.findIndex(isCur);
+  if(ci>=0&&!show.some(x=>x.k===ci)){show=show.slice(0,Math.max(0,show.length-1));show.push({p:state.saved[ci],k:ci})}
+  $("#saved").innerHTML=show.map(({p,k})=>`<button type="button" class="chip" data-k="${k}" aria-pressed="${isCur(p)}">${esc(p.name)}</button>`).join("");
+  const rest=N-show.length;
+  $("#pwrap").hidden=N<=show.length;
+  $("#pAll").textContent=`Sve parcele (${N})`;
+  $("#pAll").title=rest>0?`Još ${rest} u meniju`:"";
+  if(!$("#plist").hidden)renderPlist();
 }
+function renderPlist(){
+  const q=($("#pq")?.value||"").trim().toLowerCase();
+  const cur=state.loc;
+  const items=state.saved.map((p,k)=>({p,k})).filter(({p})=>!q||p.name.toLowerCase().includes(q)||(p.sub||"").toLowerCase().includes(q));
+  const box=$("#plist");
+  const hadInput=!!$("#pq");
+  if(!hadInput){box.innerHTML=`${state.saved.length>6?'<input id="pq" type="search" placeholder="Traži parcelu…" autocomplete="off" aria-label="Traži parcelu">':""}<ul id="pul"></ul><div class="hint">Prve parcele sa liste su uvek na ekranu. Redosled menjaš u „Uredi parcele“. Za brisanje drži × 3 sekunde.</div>`}
+  $("#pul").innerHTML=items.length?items.map(({p,k})=>`<li class="${Math.abs(p.lat-cur.lat)<1e-4&&Math.abs(p.lon-cur.lon)<1e-4?"cur":""}"><button type="button" class="pick" data-k="${k}"><b>${esc(p.name)}</b><small>${esc([p.sub,p.lat.toFixed(3)+", "+p.lon.toFixed(3)].filter(Boolean).join(" · "))}</small></button><button type="button" class="x" data-del="${k}" data-hold aria-label="Drži 3 sekunde da obrišeš ${esc(p.name)}" title="Drži 3 sekunde za brisanje">×<span class="hold-fill"></span></button></li>`).join(""):'<li><span class="pick"><small>Nema parcele sa tim imenom.</small></span></li>';
+}
+function togglePlist(open){
+  const box=$("#plist");const o=open??box.hidden;
+  box.hidden=!o;$("#pAll").setAttribute("aria-expanded",String(o));
+  if(o){box.innerHTML="";renderPlist();const i=$("#pq");if(i&&innerWidth>=600)i.focus()}
+}
+$("#pAll").addEventListener("click",()=>togglePlist());
+$("#plist").addEventListener("input",e=>{if(e.target.id==="pq")renderPlist()});
+$("#plist").addEventListener("click",e=>{
+  if(e.target.closest("[data-del]"))return; // brisanje samo držanjem
+  const b=e.target.closest(".pick[data-k]");if(b){togglePlist(false);setLoc(state.saved[+b.dataset.k])}
+});
+document.addEventListener("click",e=>{if(!$("#plist").hidden&&!e.target.closest("#pwrap"))togglePlist(false)});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#plist").hidden){togglePlist(false);$("#pAll").focus()}});
+let rsT;addEventListener("resize",()=>{clearTimeout(rsT);rsT=setTimeout(renderSaved,150)});
 function setLoc(l){state.loc=l;store.set("ap.loc",l);renderMini();hist.key=null;hist.cur=null;setTimeout(()=>loadHist(),50);$("#results").hidden=true;$("#q").value="";renderSaved();load()}
 $("#saved").addEventListener("click",e=>{
-  if(e.target.closest("[data-del]"))return; // brisanje samo držanjem
   const b=e.target.closest("[data-k]");if(b)setLoc(state.saved[+b.dataset.k]);
 });
 $("#savebox").addEventListener("click",e=>{
