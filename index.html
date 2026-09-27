@@ -24,6 +24,7 @@
   --line:#dce1da; --line-2:#c6cdc5; --accent:#2f6b4f; --accent-soft:#dcebe2; --on-accent:#ffffff;
   --rain:#3987e5; --rain-soft:#cde2fb;
   --good:#0ca30c; --warn:#e39a00; --bad:#d03b3b; --good-soft:#dcf2dc; --warn-soft:#fdf0cf; --bad-soft:#f8dddd;
+  --ic-sun:#f5a300; --ic-moon:#8a93b8; --ic-cloud:#e3e8ee; --ic-cloud-dark:#aeb8c4; --ic-cloud-edge:#8d98a5; --ic-rain:#2f80e0; --ic-snow:#5aa9e6; --ic-bolt:#ffc21a; --ic-bolt-edge:#c98a00; --ic-fog:#9aa4ae;
   --m1:#2a78d6; --m2:#eb6834; --m3:#1baf7a; --m4:#eda100; --m5:#e87ba4; --m6:#008300; --m7:#4a3aa7; --m8:#e34948; --m9:#0e8fa3;
   --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -35,6 +36,7 @@
     --line:#29322c; --line-2:#37423b; --accent:#73b894; --accent-soft:#1f3328; --on-accent:#0e1310;
     --rain:#5598e7; --rain-soft:#1c3a5e;
     --good:#2fbf2f; --warn:#fab219; --bad:#e66767; --good-soft:#15301a; --warn-soft:#3a2f10; --bad-soft:#3a1c1c;
+    --ic-sun:#ffb72b; --ic-moon:#c9d0ee; --ic-cloud:#d9dee5; --ic-cloud-dark:#8f99a6; --ic-cloud-edge:#6f7a86; --ic-rain:#5aa2ff; --ic-snow:#9fd0ff; --ic-bolt:#ffd23f; --ic-bolt-edge:#d9a300; --ic-fog:#8f99a3;
     --m1:#3987e5; --m2:#d95926; --m3:#199e70; --m4:#c98500; --m5:#d55181; --m6:#008300; --m7:#9085e9; --m8:#e66767; --m9:#2bb3c7;
   }
 }
@@ -44,7 +46,8 @@
   --line:#29322c; --line-2:#37423b; --accent:#73b894; --accent-soft:#1f3328; --on-accent:#0e1310;
   --rain:#5598e7; --rain-soft:#1c3a5e;
   --good:#2fbf2f; --warn:#fab219; --bad:#e66767; --good-soft:#15301a; --warn-soft:#3a2f10; --bad-soft:#3a1c1c;
-  --m1:#3987e5; --m2:#d95926; --m3:#199e70; --m4:#c98500; --m5:#d55181; --m6:#008300; --m7:#9085e9; --m8:#e66767; --m9:#2bb3c7;
+  --ic-sun:#ffb72b; --ic-moon:#c9d0ee; --ic-cloud:#d9dee5; --ic-cloud-dark:#8f99a6; --ic-cloud-edge:#6f7a86; --ic-rain:#5aa2ff; --ic-snow:#9fd0ff; --ic-bolt:#ffd23f; --ic-bolt-edge:#d9a300; --ic-fog:#8f99a3;
+    --m1:#3987e5; --m2:#d95926; --m3:#199e70; --m4:#c98500; --m5:#d55181; --m6:#008300; --m7:#9085e9; --m8:#e66767; --m9:#2bb3c7;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -112,7 +115,7 @@ button{cursor:pointer}
 .mini .mt b{display:block;font-family:var(--display);font-size:19px;font-weight:600;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mini .mt small{display:block;color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mini .mn{font-family:var(--display);font-size:24px;font-weight:600;display:flex;align-items:center;gap:4px}
-.mini .mn svg{width:26px;height:26px;color:var(--ink-2)}
+.mini .mn svg{width:30px;height:30px;color:var(--ink-2)}
 .mini .up{height:32px;border:1px solid var(--line-2);background:var(--surface);border-radius:8px;padding:0 10px;font-size:12.5px;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.mini{transition:none}}
 /* hero */
@@ -121,7 +124,7 @@ button{cursor:pointer}
 .now h1{font-size:30px;line-height:1.1}
 .now .coords{color:var(--muted);font-size:12px}
 .now .big{font-family:var(--display);font-size:64px;font-weight:600;line-height:1;display:flex;align-items:center;gap:12px}
-.now .big svg{width:52px;height:52px;color:var(--ink-2)}
+.now .big svg{width:68px;height:68px;color:var(--ink-2)}
 .now .sub{color:var(--ink-2)}
 .now .meta{display:flex;gap:14px;flex-wrap:wrap;color:var(--ink-2);font-size:13px}
 .updated{color:var(--muted);font-size:12px;margin-top:auto}
@@ -170,7 +173,7 @@ table.mx{border-collapse:separate;border-spacing:0;table-layout:fixed;font-varia
 .mname small{display:block;color:var(--muted);font-weight:400;font-size:11px;margin-left:17px}
 .mx td{min-width:78px}
 .cell{display:flex;flex-direction:column;align-items:center;gap:1px}
-.cell svg{width:22px;height:22px;color:var(--ink-2)}
+.cell svg{width:30px;height:30px;color:var(--ink-2)}
 .cell .t{font-size:13px}
 .cell .t b{font-weight:600}
 .cell .t span{color:var(--muted)}
@@ -275,8 +278,8 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
 .hrcol.nd{border-left-color:var(--line-2)}
 .hrcol .hh{font-size:12px;color:var(--ink-2);font-weight:600}
 .hrcol .hh.cur{color:var(--accent)}
-.hrcol svg.ic{width:24px;height:24px;color:var(--ink-2)}
-.hrcol .tz{height:74px;position:relative;width:100%}
+.hrcol svg.ic{width:32px;height:32px;color:var(--ink-2)}
+.hrcol .tz{height:80px;position:relative;width:100%}
 .hrcol .tv{position:absolute;left:0;right:0;text-align:center;font-weight:600;font-size:14px;line-height:1}
 .hrcol .rr{font-size:11px;color:var(--rain);font-weight:600;height:14px}
 .hrcol .rbar{width:60%;background:var(--rain);border-radius:2px 2px 0 0;opacity:.8}
@@ -304,12 +307,12 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
 @media (max-width:600px){.hrgrid{grid-template-columns:repeat(24,50px)}}
 /* 10-day list */
 .ten{display:flex;flex-direction:column}
-.trow{display:grid;grid-template-columns:112px 30px 92px 34px minmax(80px,1fr) 34px 84px;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.trow{display:grid;grid-template-columns:112px 38px 92px 34px minmax(80px,1fr) 34px 84px;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
 .trow:last-child{border-bottom:0}
 .trow .dn{font-family:var(--display);font-size:18px;font-weight:600;line-height:1.1}
 .trow .dn small{display:block;font-family:var(--body);font-size:11.5px;color:var(--muted);font-weight:400}
 .trow.today .dn{color:var(--accent)}
-.trow svg{width:28px;height:28px;color:var(--ink-2)}
+.trow svg{width:36px;height:36px;color:var(--ink-2)}
 .trow .rn{font-size:12.5px;color:var(--rain);font-weight:600;line-height:1.25}
 .trow .rn.dry{color:var(--muted);font-weight:400}
 .trow .rn small{display:block;font-weight:400;color:var(--muted)}
@@ -352,7 +355,8 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
   .mx th.mname{min-width:96px}
   .mname small{display:none}
   .mx td{min-width:70px;padding:6px 5px}
-  .trow{grid-template-columns:62px 26px 58px 28px minmax(40px,1fr) 28px;gap:7px}
+  .trow{grid-template-columns:60px 34px 56px 28px minmax(40px,1fr) 28px;gap:6px}
+  .trow svg{width:32px;height:32px}
   .trow .dn{font-size:16px}
   .trow .wd{display:none}
   .trow .rn small{display:none}
@@ -616,19 +620,25 @@ function wetBulb(T,RH){return T*Math.atan(0.151977*Math.sqrt(RH+8.313659))+Math.
 
 /* weather icons */
 function codeRank(c){if(c==null)return -1;if(c>=95)return 9;if(c>=85)return 8;if(c>=71&&c<=77)return 8;if(c===66||c===67)return 7;if(c>=80)return 6;if(c>=61)return 6;if(c>=51)return 5;if(c===45||c===48)return 4;return c}
-function icon(c){
-  const cloud='<path d="M7 18.5h10.2a4.2 4.2 0 0 0 .3-8.4A5.6 5.6 0 0 0 6.8 11.6 3.5 3.5 0 0 0 7 18.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>';
-  const cloudUp='<path d="M7 15.5h10.2a4.2 4.2 0 0 0 .3-8.4A5.6 5.6 0 0 0 6.8 8.6 3.5 3.5 0 0 0 7 15.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>';
-  const sun='<circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6"/><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></g>';
+function icon(c,night){
+  // obojene ikonice: sunce, mesec, oblaci, kiša, sneg, grmljavina, magla
+  const sun=(cx,cy,r)=>`<g><g style="stroke:var(--ic-sun)" stroke-width="1.8" stroke-linecap="round">${[0,45,90,135,180,225,270,315].map(a=>{const d=a*Math.PI/180,x1=cx+Math.cos(d)*(r+2.2),y1=cy+Math.sin(d)*(r+2.2),x2=cx+Math.cos(d)*(r+4.6),y2=cy+Math.sin(d)*(r+4.6);return `<path d="M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}"/>`}).join("")}</g><circle cx="${cx}" cy="${cy}" r="${r}" style="fill:var(--ic-sun)"/></g>`;
+  const moon=(cx,cy,r)=>`<path d="M${cx+r*0.35} ${cy-r} a${r} ${r} 0 1 0 ${r*0.75} ${r*1.55} a${r*0.8} ${r*0.8} 0 1 1 ${-r*0.75} ${-r*1.55}z" style="fill:var(--ic-moon)"/>`;
+  const cloud=(dy,dark)=>`<path d="M7.2 ${18.5+dy}h10.4a4.1 4.1 0 0 0 .4-8.2 5.5 5.5 0 0 0-10.6 1.5 3.4 3.4 0 0 0-.2 6.7z" style="fill:var(${dark?"--ic-cloud-dark":"--ic-cloud"});stroke:var(--ic-cloud-edge)" stroke-width=".8"/>`;
+  const drops=`<g style="fill:var(--ic-rain)"><path d="M8.6 18.6c.7 1.1 1.1 1.8 1.1 2.3a1.1 1.1 0 0 1-2.2 0c0-.5.4-1.2 1.1-2.3z"/><path d="M12.6 19.4c.7 1.1 1.1 1.8 1.1 2.3a1.1 1.1 0 0 1-2.2 0c0-.5.4-1.2 1.1-2.3z"/><path d="M16.6 18.6c.7 1.1 1.1 1.8 1.1 2.3a1.1 1.1 0 0 1-2.2 0c0-.5.4-1.2 1.1-2.3z"/></g>`;
+  const drizzle=`<g style="fill:var(--ic-rain)"><circle cx="9" cy="20.2" r=".9"/><circle cx="12.6" cy="21.4" r=".9"/><circle cx="16.2" cy="20.2" r=".9"/></g>`;
+  const flakes=`<g style="stroke:var(--ic-snow)" stroke-width="1.3" stroke-linecap="round">${[[8.6,20],[12.6,21.6],[16.6,20]].map(([x,y])=>`<path d="M${x-1.4} ${y}h2.8M${x} ${y-1.4}v2.8M${x-1} ${y-1}l2 2M${x+1} ${y-1}l-2 2"/>`).join("")}</g>`;
+  const bolt=`<path d="M13.4 14.2l-3.6 5.4h2.9l-1.9 4.3 5.2-6.4h-3l2.1-3.3z" style="fill:var(--ic-bolt);stroke:var(--ic-bolt-edge)" stroke-width=".5" stroke-linejoin="round"/>`;
   let s;
-  if(c==null) s='<path d="M6 12h12" stroke="currentColor" stroke-width="1.6"/>';
-  else if(c===0) s=sun;
-  else if(c<=2) s='<g transform="translate(-3 -3) scale(.75)">'+sun+'</g><path d="M9 20h8.5a3.6 3.6 0 0 0 .3-7.2 4.8 4.8 0 0 0-9 1.3A3 3 0 0 0 9 20z" style="fill:var(--surface)" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>';
-  else if(c===3) s=cloud;
-  else if(c===45||c===48) s='<g stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 9h16M3 13h18M5 17h14"/></g>';
-  else if(c>=95) s=cloudUp+'<path d="M12.5 15.5l-2 3.5h3l-2 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>';
-  else if((c>=71&&c<=77)||c>=85) s=cloudUp+'<g fill="currentColor"><circle cx="8.5" cy="19" r="1.1"/><circle cx="12.5" cy="21" r="1.1"/><circle cx="16" cy="19" r="1.1"/></g>';
-  else s=cloudUp+'<g style="stroke:var(--rain)" stroke-width="1.7" stroke-linecap="round"><path d="M8.5 18l-1 2.8M12.5 18l-1 2.8M16.5 18l-1 2.8"/></g>';
+  if(c==null) s='<path d="M6 12h12" style="stroke:var(--muted)" stroke-width="1.6"/>';
+  else if(c===0) s=night?moon(12,12,6.5):sun(12,12,4.6);
+  else if(c<=2) s=(night?moon(9.5,8.5,4.6):sun(9,8.6,3.4))+cloud(1,false);
+  else if(c===3) s=`<path d="M9 13.2h8.4a3.3 3.3 0 0 0 .3-6.6 4.4 4.4 0 0 0-8.5 1.2 2.7 2.7 0 0 0-.2 5.4z" style="fill:var(--ic-cloud-dark);stroke:var(--ic-cloud-edge)" stroke-width=".8"/>`+cloud(0,false);
+  else if(c===45||c===48) s=`<g style="stroke:var(--ic-fog)" stroke-width="1.8" stroke-linecap="round"><path d="M4 9h16M3 13h18M5 17h14"/></g>`;
+  else if(c>=95) s=cloud(-3,true)+bolt;
+  else if((c>=71&&c<=77)||c>=85) s=cloud(-3,false)+flakes;
+  else if(c>=51&&c<=57) s=cloud(-3,false)+drizzle;
+  else s=cloud(-3,true)+drops;
   return '<svg viewBox="0 0 24 24" aria-hidden="true">'+s+'</svg>';
 }
 const CODE_TXT=c=>c==null?"":c===0?"vedro":c<=2?"delimično oblačno":c===3?"oblačno":(c===45||c===48)?"magla":c>=95?"grmljavina":((c>=71&&c<=77)||c>=85)?"sneg":c>=80?"pljuskovi":c>=61?"kiša":c>=51?"rosulja":"";
@@ -826,7 +836,7 @@ function renderHourly(){
   const tv=idx.map(i=>T[i]).concat(showEc?idx.map(i=>E[i]):[]).filter(v=>v!=null);
   if(!tv.length){$("#hrScroll").innerHTML='<div class="loading">Nema podataka za ovaj dan.</div>';return}
   const lo=Math.min(...tv),hi=Math.max(...tv),span=Math.max(1,hi-lo);
-  const Y=v=>6+(1-(v-lo)/span)*46; // px od vrha zone temperature (74px)
+  const Y=v=>22+(1-(v-lo)/span)*50; // px od vrha zone temperature (80px)
   const pmax=Math.max(1,...idx.map(i=>P[i]||0));
   const cols=idx.map((i,k)=>{
     const t=state.time[i],h=hourOf(t),v=T[i];const night=h<6||h>=20;
@@ -836,7 +846,7 @@ function renderHourly(){
     const rain=(P[i]||0)>=0.1?r1(P[i]):(POP[i]!=null&&POP[i]>=20?r0(POP[i])+"%":"");
     const label=!sel&&k===0?"Sada":(h===0&&!sel?DOW[dateOf(t).getUTCDay()]:String(h).padStart(2,"0")+"h");
     return `<div class="hrcol ${h===0&&k>0?"nd":""} ${night?"night":""}" title="${esc(tip)}">
-      <span class="hh ${!sel&&k===0?"cur":""}">${label}</span>${icon(nearCode(C[i])).replace("<svg","<svg class='ic'")}
+      <span class="hh ${!sel&&k===0?"cur":""}">${label}</span>${icon(nearCode(C[i]),night).replace("<svg","<svg class='ic'")}
       <div class="tz">${v==null?"":`<span class="tv" style="top:${(Y(v)-18).toFixed(1)}px">${Math.round(v)}°</span>`}</div>
       ${showEc?`<span class="ecv ${dv!=null&&Math.abs(dv)>=2?"big":""}" title="ECMWF IFS${dv!=null?`, odstupanje ${dv>0?"+":""}${r1(dv)} °C`:""}">${ev==null?"–":Math.round(ev)+"°"}</span>`:""}
       <span class="rr">${rain}</span>
@@ -847,10 +857,10 @@ function renderHourly(){
   }).join("");
   // linija temperature preko kolona (koordinate u % širine)
   const n=idx.length;const pts=idx.map((i,k)=>T[i]==null?null:[(k+0.5)/n*100,Y(T[i])]).filter(Boolean);
-  const top=4+12+2+24+2; // visina sata + ikone
+  const top=4+12+2+32+2; // visina sata + ikone
   const ept=showEc?idx.map((i,k)=>E[i]==null?null:[(k+0.5)/n*100,Y(E[i])]).filter(Boolean):[];
   const pl=(a,cls)=>a.length?`<polyline class="${cls}" points="${a.map(p=>p[0].toFixed(2)+","+p[1].toFixed(1)).join(" ")}"/>`:"";
-  const svg=`<svg class="hrline" style="top:${top}px;height:74px" viewBox="0 0 100 74" preserveAspectRatio="none" aria-hidden="true">${pl(ept,"ec")}${pl(pts,"md")}</svg>`;
+  const svg=`<svg class="hrline" style="top:${top}px;height:80px" viewBox="0 0 100 80" preserveAspectRatio="none" aria-hidden="true">${pl(ept,"ec")}${pl(pts,"md")}</svg>`;
   $("#hrScroll").innerHTML=`<div class="hrgrid">${svg}${cols}</div><div class="legend hrleg" style="margin-top:8px">
     <span><i class="ln" style="background:var(--m4)"></i>Medijana modela</span>
     ${ecOk?`<button type="button" class="tog" id="hrEcTog" aria-pressed="${showEc}"><span class="sw" style="background:var(--m1)"></span>ECMWF IFS ${showEc?"uključen · plavi brojevi":"isključen"}</button>`:""}
