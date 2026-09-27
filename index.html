@@ -24,7 +24,7 @@
   --line:#dce1da; --line-2:#c6cdc5; --accent:#2f6b4f; --accent-soft:#dcebe2; --on-accent:#ffffff;
   --rain:#3987e5; --rain-soft:#cde2fb;
   --good:#0ca30c; --warn:#e39a00; --bad:#d03b3b; --good-soft:#dcf2dc; --warn-soft:#fdf0cf; --bad-soft:#f8dddd;
-  --ic-sun:#f5a300; --ic-moon:#8a93b8; --ic-cloud:#e3e8ee; --ic-cloud-dark:#aeb8c4; --ic-cloud-edge:#8d98a5; --ic-rain:#2f80e0; --ic-snow:#5aa9e6; --ic-bolt:#ffc21a; --ic-bolt-edge:#c98a00; --ic-fog:#9aa4ae;
+  --soil-bg:#f3ebe0; --soil-edge:#e0cdb4; --soil-ink:#8a5a2b; --ic-sun:#f5a300; --ic-moon:#8a93b8; --ic-cloud:#e3e8ee; --ic-cloud-dark:#aeb8c4; --ic-cloud-edge:#8d98a5; --ic-rain:#2f80e0; --ic-snow:#5aa9e6; --ic-bolt:#ffc21a; --ic-bolt-edge:#c98a00; --ic-fog:#9aa4ae;
   --m1:#2a78d6; --m2:#eb6834; --m3:#1baf7a; --m4:#eda100; --m5:#e87ba4; --m6:#008300; --m7:#4a3aa7; --m8:#e34948; --m9:#0e8fa3;
   --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -36,7 +36,7 @@
     --line:#29322c; --line-2:#37423b; --accent:#73b894; --accent-soft:#1f3328; --on-accent:#0e1310;
     --rain:#5598e7; --rain-soft:#1c3a5e;
     --good:#2fbf2f; --warn:#fab219; --bad:#e66767; --good-soft:#15301a; --warn-soft:#3a2f10; --bad-soft:#3a1c1c;
-    --ic-sun:#ffb72b; --ic-moon:#c9d0ee; --ic-cloud:#d9dee5; --ic-cloud-dark:#8f99a6; --ic-cloud-edge:#6f7a86; --ic-rain:#5aa2ff; --ic-snow:#9fd0ff; --ic-bolt:#ffd23f; --ic-bolt-edge:#d9a300; --ic-fog:#8f99a3;
+    --soil-bg:#2a2219; --soil-edge:#4a3a28; --soil-ink:#d9a86c; --ic-sun:#ffb72b; --ic-moon:#c9d0ee; --ic-cloud:#d9dee5; --ic-cloud-dark:#8f99a6; --ic-cloud-edge:#6f7a86; --ic-rain:#5aa2ff; --ic-snow:#9fd0ff; --ic-bolt:#ffd23f; --ic-bolt-edge:#d9a300; --ic-fog:#8f99a3;
     --m1:#3987e5; --m2:#d95926; --m3:#199e70; --m4:#c98500; --m5:#d55181; --m6:#008300; --m7:#9085e9; --m8:#e66767; --m9:#2bb3c7;
   }
 }
@@ -46,7 +46,7 @@
   --line:#29322c; --line-2:#37423b; --accent:#73b894; --accent-soft:#1f3328; --on-accent:#0e1310;
   --rain:#5598e7; --rain-soft:#1c3a5e;
   --good:#2fbf2f; --warn:#fab219; --bad:#e66767; --good-soft:#15301a; --warn-soft:#3a2f10; --bad-soft:#3a1c1c;
-  --ic-sun:#ffb72b; --ic-moon:#c9d0ee; --ic-cloud:#d9dee5; --ic-cloud-dark:#8f99a6; --ic-cloud-edge:#6f7a86; --ic-rain:#5aa2ff; --ic-snow:#9fd0ff; --ic-bolt:#ffd23f; --ic-bolt-edge:#d9a300; --ic-fog:#8f99a3;
+  --soil-bg:#2a2219; --soil-edge:#4a3a28; --soil-ink:#d9a86c; --ic-sun:#ffb72b; --ic-moon:#c9d0ee; --ic-cloud:#d9dee5; --ic-cloud-dark:#8f99a6; --ic-cloud-edge:#6f7a86; --ic-rain:#5aa2ff; --ic-snow:#9fd0ff; --ic-bolt:#ffd23f; --ic-bolt-edge:#d9a300; --ic-fog:#8f99a3;
     --m1:#3987e5; --m2:#d95926; --m3:#199e70; --m4:#c98500; --m5:#d55181; --m6:#008300; --m7:#9085e9; --m8:#e66767; --m9:#2bb3c7;
 }
 *{box-sizing:border-box}
@@ -119,10 +119,23 @@ button{cursor:pointer}
 .mini .up{height:32px;border:1px solid var(--line-2);background:var(--surface);border-radius:8px;padding:0 10px;font-size:12.5px;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.mini{transition:none}}
 /* hero */
-.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,2fr);gap:18px;align-items:stretch}
+.hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.8fr);gap:18px;align-items:stretch}
 .now{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
 .now h1{font-size:30px;line-height:1.1}
 .now .coords{color:var(--muted);font-size:12px}
+.nowrow{display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap}
+.nowrow .big{flex:0 0 auto}
+.soilbig{display:flex;flex-direction:column;gap:1px;padding:8px 14px;border-radius:10px;background:var(--soil-bg);border:1px solid var(--soil-edge);min-width:0}
+.soilbig .l{font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--soil-ink)}
+.soilbig .v{font-family:var(--display);font-size:42px;font-weight:600;line-height:1;color:var(--ink);display:flex;align-items:baseline;gap:8px}
+.soilbig .tr{font-family:var(--body);font-size:13px;font-weight:600}
+.soilbig .d{font-size:12.5px;color:var(--ink-2)}
+.waterrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:4px}
+.wtile{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.wtile .l{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.wtile .v{font-family:var(--display);font-size:22px;font-weight:600;line-height:1.1}
+.wtile .d{font-size:11.5px;color:var(--ink-2)}
+@media (max-width:420px){.waterrow{grid-template-columns:repeat(2,minmax(0,1fr))}.waterrow .wtile:last-child{grid-column:1/-1}.soilbig .v{font-size:40px}}
 .now .big{font-family:var(--display);font-size:64px;font-weight:600;line-height:1;display:flex;align-items:center;gap:12px}
 .now .big svg{width:68px;height:68px;color:var(--ink-2)}
 .now .sub{color:var(--ink-2)}
@@ -768,6 +781,35 @@ function renderNowSkeleton(){
   $("#alerts").innerHTML=Array.from({length:6},()=>'<div class="alert"><div class="skel" style="width:50%"></div><div class="skel" style="width:70%;height:24px"></div></div>').join("");
 }
 function nearCode(code){return code==null?null:[0,1,2,3,45,48,51,53,55,61,63,65,80,81,82,71,73,75,95].reduce((a,b)=>Math.abs(b-code)<Math.abs(a-code)?b:a,0)}
+function agroAt(key,t){const a=state.agro;if(!a||a.error||!a.hourly||!a.hourly[key])return null;const i=a.hourly.time.indexOf(t);return i<0?null:a.hourly[key][i]}
+function soilNowHtml(){
+  const t=state.time[state.nowIdx];if(!t)return"";
+  const s6=agroAt("soil_temperature_6cm",t);if(s6==null)return"";
+  const s0=agroAt("soil_temperature_0cm",t),s18=agroAt("soil_temperature_18cm",t);
+  // trend: prosek narednih 24 h u odnosu na poslednjih 24 h (6 cm)
+  const a=state.agro.hourly,i=a.time.indexOf(t),arr=a.soil_temperature_6cm;
+  const avg=(f,g)=>{const v=arr.slice(Math.max(0,f),g).filter(x=>x!=null);return v.length?v.reduce((x,y)=>x+y,0)/v.length:null};
+  const past=avg(i-23,i+1),next=avg(i+1,i+25),d=past!=null&&next!=null?next-past:null;
+  const tr=d==null?"":Math.abs(d)<0.5?`<span class="tr" style="color:var(--muted)" title="Narednih 24 h u proseku isto">→ stabilno</span>`:d>0?`<span class="tr" style="color:var(--m2)" title="Narednih 24 h u proseku toplije za ${r1(d)} °C">↑ ${r1(d)}°</span>`:`<span class="tr" style="color:var(--rain)" title="Narednih 24 h u proseku hladnije za ${r1(-d)} °C">↓ ${r1(-d)}°</span>`;
+  return `<div class="soilbig" title="Modelska procena temperature zemljišta"><span class="l">Zemljište 6 cm</span><span class="v num">${r1(s6)}°${tr}</span><span class="d num">Površina ${r1(s0)}° · 18 cm ${r1(s18)}°</span></div>`;
+}
+function waterNowHtml(){
+  const a=state.agro;if(!a||a.error||!a.daily)return"";
+  const days=dayKeys(),today=days[0];
+  const et=a.daily.et0_fao_evapotranspiration||[],etT=a.daily.time||[];
+  const etToday=et[etT.indexOf(today)];
+  const cd=dailyFor(k=>consensus(k));
+  let P=0,E=0;days.slice(0,7).forEach(d=>{P+=cd[d]?.p||0;const k=etT.indexOf(d);E+=k>=0?(et[k]||0):0});
+  const bal=P-E;
+  const t=state.time[state.nowIdx];const m=agroAt("soil_moisture_3_to_9cm",t),m2=agroAt("soil_moisture_9_to_27cm",t);
+  const balCls=bal<-15?"var(--bad)":bal<-5?"var(--warn)":"var(--good)";
+  const balTxt=bal<-15?"deficit, razmotri zalivanje":bal<-5?"blag deficit":"dovoljno vode";
+  return `<div class="waterrow">
+    <div class="wtile"><span class="l">ET₀ danas</span><span class="v num">${etToday==null?"–":r1(etToday)+" mm"}</span><span class="d">isparavanje (referentni usev)</span></div>
+    <div class="wtile"><span class="l">Bilans 7 dana</span><span class="v num" style="color:${balCls}">${bal>0?"+":""}${r1(bal)} mm</span><span class="d">${balTxt} · kiša ${r1(P)} − ET₀ ${r1(E)}</span></div>
+    <div class="wtile"><span class="l">Vlaga zemljišta</span><span class="v num">${m==null?"–":r0(m*100)+"%"}</span><span class="d">3–9 cm${m2!=null?` · 9–27 cm ${r0(m2*100)}%`:""}</span></div>
+  </div>`;
+}
 function renderNow(){
   setTimeout(renderMini,0);
   const i=state.nowIdx,act=activeModels();
@@ -781,9 +823,10 @@ function renderNow(){
   const upd=state.fetchedAt?state.fetchedAt.toLocaleTimeString("sr-Latn",{hour:"2-digit",minute:"2-digit"}):"";
   $("#now").innerHTML=`<div class="eyebrow">Lokacija</div><h1>${esc(state.loc.name)}</h1>
    <div class="coords num">${esc(state.loc.sub||"")}${state.loc.sub?" · ":""}${state.loc.lat.toFixed(4)}, ${state.loc.lon.toFixed(4)}</div>
-   <div class="big num">${icon(codeRound)}${T==null?"–":Math.round(T)+"°"}</div>
+   <div class="nowrow"><div class="big num">${icon(codeRound)}${T==null?"–":Math.round(T)+"°"}</div>${soilNowHtml()}</div>
    <div class="sub">${CODE_TXT(codeRound)}${temps.length>1?` · raspon modela ${Math.round(Math.min(...temps))}° do ${Math.round(Math.max(...temps))}°`:""}</div>
    <div class="meta num"><span>Vlažnost ${r0(cons.relative_humidity_2m)}%</span><span>Vetar ${r0(cons.wind_speed_10m)} km/h ${dirTxt}</span><span>Udari ${r0(cons.wind_gusts_10m)} km/h</span></div>
+   ${waterNowHtml()}
    <div class="updated">Ažurirano u ${upd} · ${act.length} od ${MODELS.length} modela</div>`;
 }
 
