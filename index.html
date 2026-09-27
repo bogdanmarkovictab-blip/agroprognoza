@@ -264,6 +264,35 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
 #hVar{max-width:100%;overflow-x:auto}
 #hVar button{white-space:nowrap}
 @media (max-width:900px){.hist-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.hero>.now{order:1} .hero>.alerts{order:2} .hero>.hourly{order:3;grid-column:1/-1}
+.hrdays{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;max-width:100%}
+.hrdays::-webkit-scrollbar{display:none}
+.hrdays button{flex:0 0 auto;height:30px;border:1px solid var(--line-2);background:var(--surface);border-radius:15px;padding:0 11px;font-size:12.5px;white-space:nowrap}
+.hrdays button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.hrscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.hrgrid{position:relative;display:grid;grid-template-columns:repeat(24,minmax(46px,1fr));min-width:100%;font-variant-numeric:tabular-nums}
+.hrcol{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0 6px;border-left:1px solid transparent;position:relative;z-index:1;cursor:default}
+.hrcol.nd{border-left-color:var(--line-2)}
+.hrcol .hh{font-size:12px;color:var(--ink-2);font-weight:600}
+.hrcol .hh.cur{color:var(--accent)}
+.hrcol svg.ic{width:24px;height:24px;color:var(--ink-2)}
+.hrcol .tz{height:74px;position:relative;width:100%}
+.hrcol .tv{position:absolute;left:0;right:0;text-align:center;font-weight:600;font-size:14px;line-height:1}
+.hrcol .rr{font-size:11px;color:var(--rain);font-weight:600;height:14px}
+.hrcol .rbar{width:60%;background:var(--rain);border-radius:2px 2px 0 0;opacity:.8}
+.hrcol .rbox{height:18px;width:100%;display:flex;align-items:flex-end;justify-content:center;border-bottom:1px solid var(--line)}
+.hrcol .ww{font-size:11px;color:var(--muted)}
+.hrcol .ww.hi{color:var(--warn);font-weight:600}
+.hrcol.night{background:color-mix(in srgb,var(--ink) 4%,transparent)}
+.hrline{position:absolute;left:0;width:100%;pointer-events:none;z-index:0;overflow:visible}
+.hrline polyline{fill:none;stroke:var(--m4);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.hrline circle{fill:var(--surface);stroke:var(--m4);stroke-width:1.6;vector-effect:non-scaling-stroke}
+#hourlyPanel{scroll-margin-top:72px}
+.trow{cursor:pointer}
+.trow:hover{background:var(--surface-2)}
+.trow.sel{background:var(--accent-soft)}
+@media (max-width:900px){.hero>.now{order:1} .hero>.hourly{order:2} .hero>.alerts{order:3}}
+@media (max-width:600px){.hrgrid{grid-template-columns:repeat(24,50px)}}
 /* 10-day list */
 .ten{display:flex;flex-direction:column}
 .trow{display:grid;grid-template-columns:112px 30px 92px 34px minmax(80px,1fr) 34px 84px;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
@@ -356,6 +385,13 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
 <section class="hero">
   <div class="now" id="now"><div class="skel" style="width:60%"></div><div class="skel" style="width:40%;height:50px"></div></div>
   <div class="alerts" id="alerts"></div>
+  <div class="panel hourly" id="hourlyPanel">
+    <div class="panel-head" style="align-items:center">
+      <div><div class="eyebrow">Po satima</div><h2 id="hrTitle">Narednih 24 h</h2></div>
+      <div class="hrdays" id="hrDays" role="group" aria-label="Izbor dana"></div>
+    </div>
+    <div class="hrscroll" id="hrScroll"><div class="loading">Učitavam…</div></div>
+  </div>
 </section>
 
 <section class="panel">
@@ -703,12 +739,13 @@ function dailyFor(get){ // get(key)->array
 
 /* ---------- render ---------- */
 function renderAll(){
-  renderSaved();renderNow();renderTen();renderMatrix();renderToggles();renderChart();renderSpray();renderSoil();renderAlerts();renderSources();
+  renderSaved();renderNow();renderHourly();renderTen();renderMatrix();renderToggles();renderChart();renderSpray();renderSoil();renderAlerts();renderSources();
 }
 function renderNowSkeleton(){
   $("#now").innerHTML=`<div class="eyebrow">Lokacija</div><h1>${esc(state.loc.name)}</h1><div class="coords num">${state.loc.lat.toFixed(4)}, ${state.loc.lon.toFixed(4)}</div><div class="skel" style="width:50%;height:56px;margin-top:8px"></div><div class="skel" style="width:70%"></div>`;
   $("#alerts").innerHTML=Array.from({length:6},()=>'<div class="alert"><div class="skel" style="width:50%"></div><div class="skel" style="width:70%;height:24px"></div></div>').join("");
 }
+function nearCode(code){return code==null?null:[0,1,2,3,45,48,51,53,55,61,63,65,80,81,82,71,73,75,95].reduce((a,b)=>Math.abs(b-code)<Math.abs(a-code)?b:a,0)}
 function renderNow(){
   setTimeout(renderMini,0);
   const i=state.nowIdx,act=activeModels();
@@ -751,7 +788,7 @@ function renderTen(){
     if(o.tmax!=null&&o.tmax>=35)tags.push('<span class="pill bad">toplotni stres</span>');
     if(o.g!=null&&o.g>=50)tags.push('<span class="pill warn">jaki udari '+r0(o.g)+' km/h</span>');
     if(r.sHi-r.sLo-(o.tmax-o.tmin)>6)tags.push('<span class="pill info">modeli se razilaze</span>');
-    return `<div class="trow ${r.d===today?"today":""}">
+    return `<div class="trow ${r.d===today?"today":""} ${state.hrDay===r.d?"sel":""}" data-day="${r.d}" role="button" tabindex="0" title="Prikaži po satima">
       <div class="dn">${r.d===today?"Danas":(innerWidth<600?DOW[dt.getUTCDay()]:DOWL[dt.getUTCDay()].replace(/^./,c=>c.toUpperCase()))}<small>${dt.getUTCDate()}.${dt.getUTCMonth()+1}.${r.n<act.length?` · ${r.n}/${act.length} mod.`:""}</small></div>
       ${icon(o.code)}
       <div class="rn ${dry?"dry":""}">${dry?"suvo":r1(o.p)+" mm"}${o.pop!=null?`<small>${r0(o.pop)}% · ${r.wet}/${r.np} mod.</small>`:`<small>${r.wet}/${r.np} modela</small>`}</div>
@@ -762,6 +799,45 @@ function renderTen(){
       <div class="tags">${tags.join("")}</div>
     </div>`}).join("")+'<div class="ten-note" style="margin-top:8px">Dalji dani su manje pouzdani: posle 5–7 dana ostaju samo globalni modeli (ECMWF, GFS, GEM, JMA).</div>';
 }
+/* satni prikaz: 24 sata (narednih 24 h ili ceo izabrani dan) */
+function renderHourly(){
+  if(!state.time.length)return;
+  const days=dayKeys();const sel=state.hrDay&&days.includes(state.hrDay)?state.hrDay:null;state.hrDay=sel;
+  $("#hrDays").innerHTML=`<button type="button" data-hd="" aria-pressed="${!sel}">Narednih 24 h</button>`+days.map((d,i)=>`<button type="button" data-hd="${d}" aria-pressed="${sel===d}">${i===0?"Danas":i===1?"Sutra":DOW[dateOf(d).getUTCDay()]+" "+dateOf(d).getUTCDate()+"."}</button>`).join("");
+  let start=sel?state.time.indexOf(sel+"T00:00"):state.nowIdx;if(start<0)start=0;
+  const idx=[];for(let i=start;i<start+24&&i<state.time.length;i++)idx.push(i);
+  $("#hrTitle").textContent=sel?dayLabel(sel,false).replace(/^./,c=>c.toUpperCase())+", po satima":"Narednih 24 h";
+  const T=consensus("temperature_2m"),P=consensus("precipitation"),POP=consensus("precipitation_probability"),W=consensus("wind_speed_10m"),G=consensus("wind_gusts_10m"),C=consensus("weather_code"),RH=consensus("relative_humidity_2m");
+  const act=activeModels();
+  const tv=idx.map(i=>T[i]).filter(v=>v!=null);
+  if(!tv.length){$("#hrScroll").innerHTML='<div class="loading">Nema podataka za ovaj dan.</div>';return}
+  const lo=Math.min(...tv),hi=Math.max(...tv),span=Math.max(1,hi-lo);
+  const Y=v=>6+(1-(v-lo)/span)*46; // px od vrha zone temperature (74px)
+  const pmax=Math.max(1,...idx.map(i=>P[i]||0));
+  const cols=idx.map((i,k)=>{
+    const t=state.time[i],h=hourOf(t),v=T[i];const night=h<6||h>=20;
+    const rng=act.map(m=>series(m.id,"temperature_2m")?.[i]).filter(x=>x!=null);
+    const tip=`${dayLabel(t)} ${t.slice(11,16)} · ${v==null?"–":r1(v)+" °C"}${rng.length>1?` (modeli ${r1(Math.min(...rng))}–${r1(Math.max(...rng))})`:""} · vlažnost ${r0(RH[i])}% · vetar ${r0(W[i])} km/h, udari ${r0(G[i])}${P[i]>=0.1?` · kiša ${r1(P[i])} mm`:""}${POP[i]!=null?` · verovatnoća ${r0(POP[i])}%`:""}`;
+    const rain=(P[i]||0)>=0.1?r1(P[i]):(POP[i]!=null&&POP[i]>=20?r0(POP[i])+"%":"");
+    const label=!sel&&k===0?"Sada":(h===0&&!sel?DOW[dateOf(t).getUTCDay()]:String(h).padStart(2,"0")+"h");
+    return `<div class="hrcol ${h===0&&k>0?"nd":""} ${night?"night":""}" title="${esc(tip)}">
+      <span class="hh ${!sel&&k===0?"cur":""}">${label}</span>${icon(nearCode(C[i])).replace("<svg","<svg class='ic'")}
+      <div class="tz">${v==null?"":`<span class="tv" style="top:${(Y(v)-18).toFixed(1)}px">${Math.round(v)}°</span>`}</div>
+      <span class="rr">${rain}</span>
+      <div class="rbox">${(P[i]||0)>=0.1?`<div class="rbar" style="height:${Math.max(2,(P[i]/pmax)*16)}px"></div>`:""}</div>
+      <span class="ww ${(G[i]||0)>=30?"hi":""}">${r0(W[i])}</span>
+    </div>`;
+  }).join("");
+  // linija temperature preko kolona (koordinate u % širine)
+  const n=idx.length;const pts=idx.map((i,k)=>T[i]==null?null:[(k+0.5)/n*100,Y(T[i])]).filter(Boolean);
+  const top=4+12+2+24+2; // visina sata + ikone
+  const svg=`<svg class="hrline" style="top:${top}px;height:74px" viewBox="0 0 100 74" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts.map(p=>p[0].toFixed(2)+","+p[1].toFixed(1)).join(" ")}"/></svg>`;
+  $("#hrScroll").innerHTML=`<div class="hrgrid">${svg}${cols}</div><div class="legend" style="margin-top:6px"><span>Medijana modela</span><span>Plavo: kiša (mm ili verovatnoća)</span><span>Donji red: vetar km/h</span><span>Zatamnjeno: noć</span></div>`;
+}
+$("#hrDays").addEventListener("click",e=>{const b=e.target.closest("[data-hd]");if(!b)return;state.hrDay=b.dataset.hd||null;renderHourly();renderTen();b.scrollIntoView({block:"nearest",inline:"nearest"});$("#hrScroll").scrollLeft=0});
+$("#ten").addEventListener("click",e=>{const r=e.target.closest(".trow[data-day]");if(!r)return;state.hrDay=r.dataset.day;renderHourly();renderTen();$("#hrScroll").scrollLeft=0;$("#hourlyPanel").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"})});
+$("#ten").addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.closest(".trow[data-day]")){e.preventDefault();e.target.click()}});
+
 function renderMatrix(){
   const days=dayKeys();const act=activeModels();
   const today=days[0];
