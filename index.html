@@ -125,17 +125,18 @@ button{cursor:pointer}
 .now .coords{color:var(--muted);font-size:12px}
 .nowrow{display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap}
 .nowrow .big{flex:0 0 auto}
-.soilbig{display:flex;flex-direction:column;gap:1px;padding:8px 14px;border-radius:10px;background:var(--soil-bg);border:1px solid var(--soil-edge);min-width:0}
+.soilbig{display:flex;flex-direction:column;gap:2px;min-width:0;padding-left:16px;border-left:1px solid var(--line-2)}
 .soilbig .l{font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--soil-ink)}
-.soilbig .v{font-family:var(--display);font-size:42px;font-weight:600;line-height:1;color:var(--ink);display:flex;align-items:baseline;gap:8px}
+.soilbig .v{font-family:var(--display);font-size:52px;font-weight:600;line-height:1;color:var(--soil-ink)}
 .soilbig .tr{font-family:var(--body);font-size:13px;font-weight:600}
-.soilbig .d{font-size:12.5px;color:var(--ink-2)}
+.soilbig .d{font-size:12.5px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:0 10px}
+.soilbig .d span{white-space:nowrap}
 .waterrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:4px}
 .wtile{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:1px;min-width:0}
 .wtile .l{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .wtile .v{font-family:var(--display);font-size:22px;font-weight:600;line-height:1.1}
 .wtile .d{font-size:11.5px;color:var(--ink-2)}
-@media (max-width:420px){.waterrow{grid-template-columns:repeat(2,minmax(0,1fr))}.waterrow .wtile:last-child{grid-column:1/-1}.soilbig .v{font-size:40px}}
+@media (max-width:600px){.nowrow{flex-wrap:nowrap;gap:12px}.now .nowrow .big{font-size:50px;gap:8px}.now .nowrow .big svg{width:50px;height:50px}.soilbig{padding-left:12px}.soilbig .v{font-size:42px}.soilbig .d{font-size:11.5px}}
 .now .big{font-family:var(--display);font-size:64px;font-weight:600;line-height:1;display:flex;align-items:center;gap:12px}
 .now .big svg{width:68px;height:68px;color:var(--ink-2)}
 .now .sub{color:var(--ink-2)}
@@ -786,12 +787,7 @@ function soilNowHtml(){
   const t=state.time[state.nowIdx];if(!t)return"";
   const s6=agroAt("soil_temperature_6cm",t);if(s6==null)return"";
   const s0=agroAt("soil_temperature_0cm",t),s18=agroAt("soil_temperature_18cm",t);
-  // trend: prosek narednih 24 h u odnosu na poslednjih 24 h (6 cm)
-  const a=state.agro.hourly,i=a.time.indexOf(t),arr=a.soil_temperature_6cm;
-  const avg=(f,g)=>{const v=arr.slice(Math.max(0,f),g).filter(x=>x!=null);return v.length?v.reduce((x,y)=>x+y,0)/v.length:null};
-  const past=avg(i-23,i+1),next=avg(i+1,i+25),d=past!=null&&next!=null?next-past:null;
-  const tr=d==null?"":Math.abs(d)<0.5?`<span class="tr" style="color:var(--muted)" title="Narednih 24 h u proseku isto">→ stabilno</span>`:d>0?`<span class="tr" style="color:var(--m2)" title="Narednih 24 h u proseku toplije za ${r1(d)} °C">↑ ${r1(d)}°</span>`:`<span class="tr" style="color:var(--rain)" title="Narednih 24 h u proseku hladnije za ${r1(-d)} °C">↓ ${r1(-d)}°</span>`;
-  return `<div class="soilbig" title="Modelska procena temperature zemljišta"><span class="l">Zemljište 6 cm</span><span class="v num">${r1(s6)}°${tr}</span><span class="d num">Površina ${r1(s0)}° · 18 cm ${r1(s18)}°</span></div>`;
+  return `<div class="soilbig" title="Temperatura zemljišta na 6 cm (procena modela)"><span class="v num">${r1(s6)}°</span><span class="d num">${s0!=null?`<span>površina ${r1(s0)}°</span>`:""}${s18!=null?`<span>18 cm ${r1(s18)}°</span>`:""}</span></div>`;
 }
 function waterNowHtml(){
   const a=state.agro;if(!a||a.error||!a.daily)return"";
@@ -826,7 +822,6 @@ function renderNow(){
    <div class="nowrow"><div class="big num">${icon(codeRound)}${T==null?"–":Math.round(T)+"°"}</div>${soilNowHtml()}</div>
    <div class="sub">${CODE_TXT(codeRound)}${temps.length>1?` · raspon modela ${Math.round(Math.min(...temps))}° do ${Math.round(Math.max(...temps))}°`:""}</div>
    <div class="meta num"><span>Vlažnost ${r0(cons.relative_humidity_2m)}%</span><span>Vetar ${r0(cons.wind_speed_10m)} km/h ${dirTxt}</span><span>Udari ${r0(cons.wind_gusts_10m)} km/h</span></div>
-   ${waterNowHtml()}
    <div class="updated">Ažurirano u ${upd} · ${act.length} od ${MODELS.length} modela</div>`;
 }
 
