@@ -76,7 +76,16 @@ button{cursor:pointer}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{display:inline-flex;align-items:center;gap:6px;height:30px;border:1px solid var(--line-2);background:var(--surface);border-radius:15px;padding:0 10px;font-size:13px}
 .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:600}
-.chip .x{border:0;background:none;padding:0 0 0 2px;color:var(--muted);font-size:15px;line-height:1}
+.chip .x{border:0;background:none;padding:0 2px 0 8px;margin-left:2px;border-left:1px solid var(--line-2);color:var(--muted);font-size:15px;line-height:1;height:18px}
+/* brisanje držanjem */
+[data-hold]{position:relative;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.chip:has(.x.holding){border-color:var(--bad)}
+.hold-fill{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--bad);opacity:.28;pointer-events:none}
+.holding .hold-fill,.chip:has(.x.holding) .hold-fill{animation:holdfill var(--hold,3s) linear forwards}
+@keyframes holdfill{to{width:100%}}
+.chip{position:relative;overflow:hidden}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);border-radius:10px;padding:10px 14px;display:flex;gap:14px;align-items:center;font-size:13.5px;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:calc(100% - 32px)}
+.toast button{border:0;background:none;color:var(--accent-soft);font-weight:700;text-decoration:underline;padding:0;white-space:nowrap}
 .savebox{display:flex;gap:6px}
 .savebox input{height:30px;border:1px solid var(--line-2);border-radius:15px;padding:0 10px;background:var(--surface);width:170px}
 
@@ -831,14 +840,46 @@ function renderMini(){
   $("#miniUp").addEventListener("click",()=>{top();setTimeout(()=>$("#q").focus(),350)});
 })();
 
+/* brisanje parcele: drži 3 s, uz mogućnost vraćanja */
+const HOLD_MS=3000;
+let holdT=null,holdEl=null,toastT=null;
+function toast(html,ms=6000){
+  let t=$("#toast");if(!t){t=document.createElement("div");t.id="toast";t.className="toast";t.setAttribute("role","status");document.body.appendChild(t)}
+  t.innerHTML=html;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{t.hidden=true},ms);return t;
+}
+function deleteParcel(k){
+  const p=state.saved[k];if(!p)return;
+  state.saved.splice(k,1);store.set("ap.saved",state.saved);renderSaved();if(!$("#mgr").hidden)renderMgr();
+  try{navigator.vibrate&&navigator.vibrate(40)}catch(e){}
+  const t=toast(`<span>Obrisana parcela „${esc(p.name)}“</span><button type="button" id="undoDel">Vrati</button>`,8000);
+  t.querySelector("#undoDel").onclick=()=>{state.saved.splice(Math.min(k,state.saved.length),0,p);store.set("ap.saved",state.saved);renderSaved();if(!$("#mgr").hidden)renderMgr();t.hidden=true};
+}
+function holdCancel(showHint){
+  if(!holdEl)return;
+  const done=holdEl.dataset.done;clearTimeout(holdT);holdEl.classList.remove("holding");holdEl=null;
+  if(showHint&&!done)toast("Za brisanje drži dugme 3 sekunde.",2500);
+}
+document.addEventListener("pointerdown",e=>{
+  const b=e.target.closest("[data-hold]");if(!b||b.disabled)return;
+  e.preventDefault();holdCancel(false);holdEl=b;delete b.dataset.done;
+  b.style.setProperty("--hold",HOLD_MS+"ms");
+  const fill=b.querySelector(".hold-fill")||b.parentElement.querySelector(".hold-fill");
+  if(fill){fill.style.animation="none";void fill.offsetWidth;fill.style.animation=""}
+  b.classList.add("holding");
+  holdT=setTimeout(()=>{b.dataset.done="1";const k=+(b.dataset.del??b.dataset.rm);holdCancel(false);deleteParcel(k)},HOLD_MS);
+});
+["pointerup","pointercancel"].forEach(ev=>document.addEventListener(ev,()=>holdCancel(true)));
+document.addEventListener("pointermove",e=>{if(holdEl&&!holdEl.contains(document.elementFromPoint(e.clientX,e.clientY)))holdCancel(true)});
+document.addEventListener("contextmenu",e=>{if(e.target.closest("[data-hold]"))e.preventDefault()});
+
 /* ---------- locations ---------- */
 function renderSaved(){
   const cur=state.loc;
-  $("#saved").innerHTML=state.saved.map((p,k)=>`<span class="chip" aria-pressed="${Math.abs(p.lat-cur.lat)<1e-4&&Math.abs(p.lon-cur.lon)<1e-4}"><button type="button" data-k="${k}" style="border:0;background:none;padding:0;font:inherit;color:inherit">${esc(p.name)}</button><button type="button" class="x" data-del="${k}" aria-label="Ukloni ${esc(p.name)}">×</button></span>`).join("");
+  $("#saved").innerHTML=state.saved.map((p,k)=>`<span class="chip" aria-pressed="${Math.abs(p.lat-cur.lat)<1e-4&&Math.abs(p.lon-cur.lon)<1e-4}"><button type="button" data-k="${k}" style="border:0;background:none;padding:0;font:inherit;color:inherit">${esc(p.name)}</button><button type="button" class="x" data-del="${k}" data-hold aria-label="Drži 3 sekunde da obrišeš ${esc(p.name)}" title="Drži 3 sekunde za brisanje">×</button><span class="hold-fill"></span></span>`).join("");
 }
 function setLoc(l){state.loc=l;store.set("ap.loc",l);renderMini();$("#results").hidden=true;$("#q").value="";renderSaved();load()}
 $("#saved").addEventListener("click",e=>{
-  const d=e.target.closest("[data-del]");if(d){state.saved.splice(+d.dataset.del,1);store.set("ap.saved",state.saved);renderSaved();return}
+  if(e.target.closest("[data-del]"))return; // brisanje samo držanjem
   const b=e.target.closest("[data-k]");if(b)setLoc(state.saved[+b.dataset.k]);
 });
 $("#savebox").addEventListener("click",e=>{
@@ -895,7 +936,7 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{if(sta
 function renderMgr(msg){
   const box=$("#mgr");
   box.innerHTML=`<div class="eyebrow">Sačuvane parcele (${state.saved.length})</div>
-   <ul>${state.saved.map((p,k)=>`<li><input value="${esc(p.name)}" data-rn="${k}" aria-label="Naziv parcele"><span class="c num">${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}</span><button class="chip" type="button" data-up="${k}" ${k?"":"disabled"} aria-label="Pomeri gore">↑</button><button class="chip" type="button" data-rm="${k}">Obriši</button></li>`).join("")||'<li class="msg">Još nema sačuvanih parcela. Izaberi lokaciju i klikni „+ Sačuvaj parcelu“.</li>'}</ul>
+   <ul>${state.saved.map((p,k)=>`<li><input value="${esc(p.name)}" data-rn="${k}" aria-label="Naziv parcele"><span class="c num">${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}</span><button class="chip" type="button" data-up="${k}" ${k?"":"disabled"} aria-label="Pomeri gore">↑</button><button class="chip" type="button" data-rm="${k}" data-hold title="Drži 3 sekunde za brisanje">Obriši<span class="hold-fill"></span></button></li>`).join("")||'<li class="msg">Još nema sačuvanih parcela. Izaberi lokaciju i klikni „+ Sačuvaj parcelu“.</li>'}</ul>
    <div class="eyebrow" style="margin-top:6px">Prenos na drugi uređaj</div>
    <div class="msg">Kopiraj ovaj tekst i nalepi ga u Agroprognozu na telefonu ili drugom računaru, pa klikni „Uvezi“. Postojeće parcele ostaju, dodaju se samo nove.</div>
    <textarea id="mgrText" spellcheck="false">${esc(JSON.stringify(state.saved.map(p=>({name:p.name,lat:+p.lat.toFixed(5),lon:+p.lon.toFixed(5),sub:p.sub||""}))))}</textarea>
@@ -905,7 +946,7 @@ $("#mgrBtn").addEventListener("click",()=>{const b=$("#mgr");b.hidden=!b.hidden;
 $("#mgr").addEventListener("change",e=>{const i=e.target.closest("[data-rn]");if(!i)return;const k=+i.dataset.rn;const v=i.value.trim();if(v){state.saved[k].name=v;store.set("ap.saved",state.saved);renderSaved()}});
 $("#mgr").addEventListener("click",async e=>{
   const t=e.target;
-  if(t.dataset.rm!=null){state.saved.splice(+t.dataset.rm,1);store.set("ap.saved",state.saved);renderSaved();renderMgr("Obrisano.")}
+  if(t.dataset.rm!=null)return; // brisanje samo držanjem
   else if(t.dataset.up!=null){const k=+t.dataset.up;[state.saved[k-1],state.saved[k]]=[state.saved[k],state.saved[k-1]];store.set("ap.saved",state.saved);renderSaved();renderMgr()}
   else if(t.id==="mgrClose"){$("#mgr").hidden=true;$("#mgrBtn").setAttribute("aria-expanded","false")}
   else if(t.id==="mgrCopy"){const ta=$("#mgrText");try{await navigator.clipboard.writeText(ta.value);$("#mgrMsg").textContent="Kopirano."}catch(err){ta.select();$("#mgrMsg").textContent="Označeno, kopiraj sa Ctrl+C."}}
