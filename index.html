@@ -16,6 +16,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="firebase-config.js"></script>
 <style>
 :root{
   color-scheme:light;
@@ -222,6 +223,11 @@ table.soil{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
 .mgr ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
 .mgr li{display:flex;gap:8px;align-items:center;font-size:13px}
 .mgr li input{flex:1;min-width:0;height:30px;border:1px solid var(--line-2);border-radius:6px;padding:0 8px;background:var(--bg)}
+.auth-form{display:flex;flex-direction:column;gap:8px;max-width:360px}
+.auth-form label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--ink-2)}
+.auth-form input{height:38px;border:1px solid var(--line-2);border-radius:8px;padding:0 10px;background:var(--bg);color:var(--ink)}
+.linkbtn{border:0;background:none;padding:0;color:var(--accent);text-decoration:underline;font-size:12.5px;align-self:flex-start}
+#authBtn.on{border-color:var(--accent);color:var(--accent);font-weight:600;max-width:190px;overflow:hidden;text-overflow:ellipsis}
 .mgr li .c{color:var(--muted);font-size:11.5px;white-space:nowrap}
 
 @media (max-width:900px){
@@ -261,6 +267,7 @@ table.soil{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
     </div>
     <button class="btn" id="geo" type="button" title="Koristi moju trenutnu lokaciju">Moja lokacija</button>
     <button class="btn" id="refresh" type="button">Osveži</button>
+    <button class="btn" id="authBtn" type="button" aria-expanded="false" hidden>Prijava</button>
   </div>
   <div class="bar-row">
     <div class="chips" id="saved"></div>
@@ -270,6 +277,7 @@ table.soil{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
     <button class="chip" id="mgrBtn" type="button" aria-expanded="false">Uredi parcele</button>
   </div>
   <div class="mgr" id="mgr" hidden></div>
+  <div class="mgr" id="authPanel" hidden></div>
 </header>
 
 <section class="hero">
@@ -407,7 +415,8 @@ const $=s=>document.querySelector(s);
 /* Trajno čuvanje: localStorage + rezervna kopija u IndexedDB (ako pregledač obriše jedno, vraća se iz drugog) */
 const store={
   get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
-  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){} idb.put(k,v)}
+  set(k,v){this.setLocal(k,v);if(k==="ap.saved"||k==="ap.enabled")cloudPush()},
+  setLocal(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){} idb.put(k,v)}
 };
 const idb={
   _db:null,
@@ -917,7 +926,104 @@ $("#mgr").addEventListener("click",async e=>{
   if(!hadLoc){const l=await idb.get("ap.loc");if(l&&typeof l.lat==="number")state.loc=l;else if(state.saved[0])state.loc=state.saved[0]}
   renderSaved();
   load();
+  initCloud();
 })();
+/* ---------- nalozi (Firebase): parcele se čuvaju na nalogu ---------- */
+const FB="https://www.gstatic.com/firebasejs/10.12.2/";
+const cloud={on:false,auth:null,db:null,user:null,ref:null,unsub:null,timer:null,msg:""};
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("učitavanje "+src));document.head.appendChild(s)})}
+async function initCloud(){
+  const cfg=window.AP_FIREBASE;
+  if(!cfg||!cfg.apiKey)return;
+  $("#authBtn").hidden=false;
+  try{
+    if(!window.firebase){for(const f of["firebase-app-compat.js","firebase-auth-compat.js","firebase-firestore-compat.js"])await loadScript(FB+f)}
+    if(!firebase.apps.length)firebase.initializeApp(cfg);
+    cloud.auth=firebase.auth();cloud.db=firebase.firestore();
+    try{cloud.db.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
+    cloud.on=true;
+    cloud.auth.onAuthStateChanged(onUser);
+  }catch(e){cloud.msg="Prijava trenutno nije dostupna (nema interneta?).";renderAuth()}
+}
+const sameLoc=(a,b)=>Math.abs(a.lat-b.lat)<1e-4&&Math.abs(a.lon-b.lon)<1e-4;
+function cleanParcels(arr){return(Array.isArray(arr)?arr:[]).filter(p=>p&&isFinite(p.lat)&&isFinite(p.lon)).map(p=>({name:String(p.name||"Parcela").slice(0,60),sub:String(p.sub||"").slice(0,80),lat:+p.lat,lon:+p.lon}))}
+function applySaved(arr){
+  state.saved=cleanParcels(arr);store.setLocal("ap.saved",state.saved);renderSaved();
+  if(!$("#mgr").hidden)renderMgr();
+}
+async function onUser(u){
+  if(cloud.unsub){cloud.unsub();cloud.unsub=null}
+  cloud.user=u;cloud.ref=null;cloud.msg="";renderAuth();
+  if(!u)return;
+  cloud.ref=cloud.db.collection("korisnici").doc(u.uid);
+  let data={};
+  try{const snap=await cloud.ref.get();data=snap.exists?snap.data():{}}
+  catch(e){cloud.msg=e.code==="permission-denied"?"Ovaj nalog nema dozvolu za čuvanje parcela. Javi administratoru.":"Parcele sa naloga nisu učitane: "+(e.code||e.message);renderAuth();return}
+  // spoji: sve sa naloga + lokalne parcele kojih tamo nema
+  const merged=cleanParcels(data.parcele);
+  state.saved.forEach(p=>{if(!merged.some(q=>sameLoc(p,q)))merged.push(p)});
+  applySaved(merged);
+  if(Array.isArray(data.modeli)&&data.modeli.length){const ok=data.modeli.filter(id=>MODELS.some(m=>m.id===id));if(ok.length){state.enabled=new Set(ok);store.setLocal("ap.enabled",ok);if(state.time.length)renderAll()}}
+  cloudPush(true);
+  cloud.unsub=cloud.ref.onSnapshot(s=>{
+    if(s.metadata.hasPendingWrites)return;
+    const d=s.data()||{};
+    if(Array.isArray(d.parcele)&&JSON.stringify(cleanParcels(d.parcele))!==JSON.stringify(state.saved))applySaved(d.parcele);
+  },()=>{});
+  renderAuth();
+}
+function cloudPush(now){
+  if(!cloud.ref||!cloud.user)return;
+  clearTimeout(cloud.timer);
+  const go=()=>cloud.ref.set({parcele:state.saved,modeli:[...state.enabled],email:cloud.user.email||"",azurirano:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})
+    .catch(e=>{cloud.msg="Čuvanje na nalogu nije uspelo ("+(e.code||e.message)+"). Parcele su sačuvane na ovom uređaju.";renderAuth()});
+  if(now)go();else cloud.timer=setTimeout(go,600);
+}
+const AUTH_ERR={"auth/invalid-credential":"Pogrešan imejl ili lozinka.","auth/wrong-password":"Pogrešan imejl ili lozinka.","auth/user-not-found":"Ne postoji nalog sa tim imejlom.","auth/invalid-email":"Imejl adresa nije ispravna.","auth/too-many-requests":"Previše pokušaja. Sačekaj par minuta pa probaj ponovo.","auth/network-request-failed":"Nema internet veze.","auth/user-disabled":"Ovaj nalog je isključen.","auth/missing-password":"Upiši lozinku."};
+const authErr=e=>AUTH_ERR[e.code]||("Greška: "+(e.code||e.message));
+function renderAuth(){
+  const b=$("#authBtn"),p=$("#authPanel"),u=cloud.user;
+  b.textContent=u?(u.email||"Nalog").split("@")[0]:"Prijava";
+  b.classList.toggle("on",!!u);
+  b.title=u?"Prijavljen: "+u.email:"Prijavi se da bi se parcele čuvale na nalogu";
+  if(p.hidden)return;
+  if(u){
+    p.innerHTML=`<div class="eyebrow">Nalog</div>
+      <div class="msg">Prijavljen si kao <b>${esc(u.email||"")}</b>. Parcele (${state.saved.length}) i izbor modela čuvaju se na nalogu i vide se na svakom telefonu i računaru gde se prijaviš.</div>
+      ${cloud.msg?`<div class="err-box">${esc(cloud.msg)}</div>`:""}
+      <div class="row"><button class="btn" type="button" id="authOut">Odjavi se</button><button class="btn" type="button" id="authClose">Zatvori</button></div>`;
+  }else{
+    p.innerHTML=`<div class="eyebrow">Prijava</div>
+      <form class="auth-form" id="authForm" novalidate>
+        <label>Imejl<input id="authEmail" type="email" autocomplete="username" required></label>
+        <label>Lozinka<input id="authPass" type="password" autocomplete="current-password" required></label>
+        <div class="row"><button class="btn primary" type="submit" id="authGo">Prijavi se</button><button class="btn" type="button" id="authClose">Zatvori</button></div>
+        <button class="linkbtn" type="button" id="authReset">Zaboravljena lozinka</button>
+        <div class="msg" id="authMsg">${esc(cloud.msg||"Nalog otvara administrator. Bez prijave aplikacija radi normalno, a parcele ostaju samo na ovom uređaju.")}</div>
+      </form>`;
+  }
+}
+$("#authBtn").addEventListener("click",()=>{const p=$("#authPanel");p.hidden=!p.hidden;$("#authBtn").setAttribute("aria-expanded",String(!p.hidden));if(!p.hidden){renderAuth();const e=$("#authEmail");if(e)e.focus()}});
+$("#authPanel").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const email=$("#authEmail").value.trim(),pass=$("#authPass").value;
+  if(!cloud.on){$("#authMsg").textContent="Prijava trenutno nije dostupna.";return}
+  $("#authGo").disabled=true;$("#authMsg").textContent="Prijavljujem…";
+  try{await cloud.auth.signInWithEmailAndPassword(email,pass);$("#authPanel").hidden=true;$("#authBtn").setAttribute("aria-expanded","false")}
+  catch(err){$("#authMsg").textContent=authErr(err);$("#authGo").disabled=false}
+});
+$("#authPanel").addEventListener("click",async e=>{
+  const id=e.target.id;
+  if(id==="authClose"){$("#authPanel").hidden=true;$("#authBtn").setAttribute("aria-expanded","false")}
+  else if(id==="authOut"){await cloud.auth.signOut();$("#authPanel").hidden=true;$("#authBtn").setAttribute("aria-expanded","false")}
+  else if(id==="authReset"){
+    const email=$("#authEmail").value.trim();
+    if(!email){$("#authMsg").textContent="Upiši imejl, pa klikni „Zaboravljena lozinka“.";return}
+    try{await cloud.auth.sendPasswordResetEmail(email);$("#authMsg").textContent="Poslat je imejl sa linkom za novu lozinku. Proveri i Spam."}
+    catch(err){$("#authMsg").textContent=authErr(err)}
+  }
+});
+
 if("serviceWorker" in navigator&&location.protocol.startsWith("http")){navigator.serviceWorker.register("sw.js").catch(()=>{})}
 </script>
 </body>

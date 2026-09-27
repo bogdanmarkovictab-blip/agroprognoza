@@ -1,0 +1,23 @@
+rules_version = '2';
+// Pravila pristupa za Agroprognozu.
+// Svaki korisnik vidi i menja samo svoj dokument (svoje parcele),
+// i samo ako je njegov imejl na listi ispod.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function dozvoljen() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && request.auth.token.email.lower() in [
+          'bogdan.markovic.tab@gmail.com',
+          'korisnik2@primer.rs',
+          'korisnik3@primer.rs',
+          'korisnik4@primer.rs',
+          'korisnik5@primer.rs',
+          'korisnik6@primer.rs'
+        ];
+    }
+    match /korisnici/{uid} {
+      allow read, write: if dozvoljen() && request.auth.uid == uid;
+    }
+  }
+}
