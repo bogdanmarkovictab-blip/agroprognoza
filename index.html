@@ -312,6 +312,8 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
 .hrline{position:absolute;left:0;width:100%;pointer-events:none;z-index:0;overflow:visible}
 .hrline polyline{fill:none;stroke:var(--m4);stroke-width:2.4;vector-effect:non-scaling-stroke;stroke-linejoin:round}
 .hrline polyline.ec{stroke:var(--m1);stroke-width:2;stroke-dasharray:5 3}
+.hrcol .uvh{font-size:11px;font-weight:600;color:var(--ink-2);height:15px;line-height:15px;display:flex;align-items:center;gap:3px}
+.hrcol .uvh i{width:8px;height:8px;border-radius:50%;display:inline-block}
 .hrcol .ecv{font-size:11px;font-weight:600;color:var(--m1);height:14px;line-height:14px}
 .hrcol .ecv.big{text-decoration:underline;text-underline-offset:2px}
 .hrleg{align-items:center}
@@ -345,6 +347,8 @@ table.acct{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
 .trow{display:grid;grid-template-columns:112px 38px 92px 34px minmax(80px,1fr) 34px 84px;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
 .trow:last-child{border-bottom:0}
 .trow .dn{font-family:var(--display);font-size:18px;font-weight:600;line-height:1.1}
+.uvd{white-space:nowrap;color:var(--ink-2)}
+.uvd i{display:inline-block;width:7px;height:7px;border-radius:50%;margin:0 3px 0 2px;vertical-align:0}
 .trow .dn small{display:block;font-family:var(--body);font-size:11.5px;color:var(--muted);font-weight:400}
 .trow.today .dn{color:var(--accent)}
 .trow svg{width:36px;height:36px;color:var(--ink-2)}
@@ -378,6 +382,11 @@ table.acct{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
 .auth-form input{height:38px;border:1px solid var(--line-2);border-radius:8px;padding:0 10px;background:var(--bg);color:var(--ink)}
 .linkbtn{border:0;background:none;padding:0;color:var(--accent);text-decoration:underline;font-size:12.5px;align-self:flex-start}
 #authBtn.on{border-color:var(--accent);color:var(--accent);font-weight:600;max-width:190px;overflow:hidden;text-overflow:ellipsis}
+.saveform{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:flex-end;background:var(--surface);border:1px solid var(--line-2);border-radius:10px;padding:8px 10px;max-width:100%}
+.saveform label{display:flex;flex-direction:column;gap:2px;font-size:11.5px;color:var(--ink-2)}
+.saveform input{height:32px;border:1px solid var(--line-2);border-radius:8px;padding:0 8px;background:var(--bg);color:var(--ink);width:170px;max-width:100%}
+.saveform .row{display:flex;gap:6px}
+.saveform .msg{flex-basis:100%;font-size:12px;color:var(--ink-2)}
 .mgr li .c{color:var(--muted);font-size:11.5px;white-space:nowrap}
 
 @media (max-width:900px){
@@ -948,7 +957,7 @@ function renderTen(){
     if(o.g!=null&&o.g>=50)tags.push('<span class="pill warn">jaki udari '+r0(o.g)+' km/h</span>');
     if(r.sHi-r.sLo-(o.tmax-o.tmin)>6)tags.push('<span class="pill info">modeli se razilaze</span>');
     return `<div class="trow ${r.d===today?"today":""} ${state.hrDay===r.d?"sel":""}" data-day="${r.d}" role="button" tabindex="0" title="Prikaži po satima">
-      <div class="dn">${r.d===today?"Danas":(innerWidth<600?DOW[dt.getUTCDay()]:DOWL[dt.getUTCDay()].replace(/^./,c=>c.toUpperCase()))}<small>${dt.getUTCDate()}.${dt.getUTCMonth()+1}.${r.n<act.length?` · ${r.n}/${act.length} mod.`:""}</small></div>
+      <div class="dn">${r.d===today?"Danas":(innerWidth<600?DOW[dt.getUTCDay()]:DOWL[dt.getUTCDay()].replace(/^./,c=>c.toUpperCase()))}<small>${dt.getUTCDate()}.${dt.getUTCMonth()+1}.${r.n<act.length?` · ${r.n}/${act.length} mod.`:""}${(()=>{const a=state.agro;if(!a||!a.daily||!a.daily.uv_index_max)return"";const u=a.daily.uv_index_max[a.daily.time.indexOf(r.d)];if(u==null)return"";const L=uvLvl(u);return ` <span class="uvd" title="Najveći UV indeks tog dana: ${r1(u)} (${L[1]})"><i style="background:${L[2]}"></i>UV ${Math.round(u)}</span>`})()}</small></div>
       ${icon(o.code)}
       <div class="rn ${dry?"dry":""}">${dry?"suvo":r1(o.p)+" mm"}${o.pop!=null?`<small>${r0(o.pop)}% · ${r.wet}/${r.np} mod.</small>`:`<small>${r.wet}/${r.np} modela</small>`}</div>
       <div class="lo">${r0(o.tmin)}°</div>
@@ -972,6 +981,7 @@ function renderHourly(){
   const showEc=ecOk&&store.get("ap.hrEc",true);
   const E=ecOk?series("ecmwf_ifs025","temperature_2m"):[];
   const showSp=store.get("ap.hrSp",true);
+  const uvOk=!!(state.agro&&state.agro.hourly&&state.agro.hourly.uv_index);const showUv=uvOk&&store.get("ap.hrUv",true);
   const SC=showSp?{t:T,rh:RH,w:W,g:G,p:P,pop:POP}:null;
   const tv=idx.map(i=>T[i]).concat(showEc?idx.map(i=>E[i]):[]).filter(v=>v!=null);
   if(!tv.length){$("#hrScroll").innerHTML='<div class="loading">Nema podataka za ovaj dan.</div>';return}
@@ -989,6 +999,7 @@ function renderHourly(){
       <span class="hh ${!sel&&k===0?"cur":""}">${label}</span>${icon(nearCode(C[i]),night).replace("<svg","<svg class='ic'")}
       <div class="tz">${v==null?"":`<span class="tv" style="top:${(Y(v)-18).toFixed(1)}px">${Math.round(v)}°</span>`}</div>
       ${showEc?`<span class="ecv ${dv!=null&&Math.abs(dv)>=2?"big":""}" title="ECMWF IFS${dv!=null?`, odstupanje ${dv>0?"+":""}${r1(dv)} °C`:""}">${ev==null?"–":Math.round(ev)+"°"}</span>`:""}
+      ${showUv?(()=>{const u=agroAt("uv_index",t);if(u==null||u<0.5)return `<span class="uvh"></span>`;const L=uvLvl(u);return `<span class="uvh" title="UV ${r1(u)} · ${L[1]}"><i style="background:${L[2]}"></i>${Math.round(u)}</span>`})():""}
       <span class="rr">${rain}</span>
       <div class="rbox">${(P[i]||0)>=0.1?`<div class="rbar" style="height:${Math.max(2,(P[i]/pmax)*16)}px"></div>`:""}</div>
       <span class="ww ${(G[i]||0)>=30?"hi":""}">${r0(W[i])}</span>
@@ -1004,11 +1015,13 @@ function renderHourly(){
   $("#hrScroll").innerHTML=`<div class="hrgrid">${svg}${cols}</div><div class="legend hrleg" style="margin-top:8px">
     <span><i class="ln" style="background:var(--m4)"></i>Medijana modela</span>
     ${ecOk?`<button type="button" class="tog" id="hrEcTog" aria-pressed="${showEc}"><span class="sw" style="background:var(--m1)"></span>ECMWF IFS ${showEc?"uključen · plavi brojevi":"isključen"}</button>`:""}
+    ${uvOk?`<button type="button" class="tog" id="hrUvTog" aria-pressed="${showUv}"><span class="sw" style="background:var(--uv2);height:8px;width:8px;border-radius:50%"></span>UV ${showUv?"uključen":"isključen"}</button>`:""}
     <button type="button" class="tog" id="hrSpTog" aria-pressed="${showSp}"><span class="sw sp3"></span>Prskanje ${showSp?"uključeno":"isključeno"}</button>
     <span>Kiša: mm ili verovatnoća, iznad stubića</span><span>Ispod kiše: vetar km/h</span><span>Zatamnjeno: noć</span></div>`;
 }
 $("#hrScroll").addEventListener("click",e=>{
   const d=e.target.closest(".spd");if(d){toast(esc(d.dataset.sp),5000);return}
+  if(e.target.closest("#hrUvTog")){const x=$("#hrScroll").scrollLeft;store.setLocal("ap.hrUv",!store.get("ap.hrUv",true));renderHourly();$("#hrScroll").scrollLeft=x;return}
   if(e.target.closest("#hrSpTog")){const x=$("#hrScroll").scrollLeft;store.setLocal("ap.hrSp",!store.get("ap.hrSp",true));renderHourly();$("#hrScroll").scrollLeft=x;return}
   if(e.target.closest("#hrEcTog")){const x=$("#hrScroll").scrollLeft;store.setLocal("ap.hrEc",!store.get("ap.hrEc",true));renderHourly();$("#hrScroll").scrollLeft=x}});
 $("#hrDays").addEventListener("click",e=>{const b=e.target.closest("[data-hd]");if(!b)return;state.hrDay=b.dataset.hd||null;renderHourly();renderTen();b.scrollIntoView({block:"nearest",inline:"nearest"});$("#hrScroll").scrollLeft=0});
@@ -1671,14 +1684,24 @@ $("#saved").addEventListener("click",e=>{
 });
 $("#savebox").addEventListener("click",e=>{
   if(e.target.id==="saveBtn"){
-    $("#savebox").innerHTML=`<input id="saveName" value="${esc(state.loc.name)}" aria-label="Naziv parcele"><button class="chip" id="saveOk" type="button">Sačuvaj</button><button class="chip" id="saveNo" type="button">Otkaži</button>`;
+    $("#savebox").innerHTML=`<div class="saveform"><label>Naziv<input id="saveName" value="${esc(state.loc.name)}" aria-label="Naziv parcele"></label><label>Koordinate<input id="saveCoord" class="num" value="${state.loc.lat.toFixed(5)}, ${state.loc.lon.toFixed(5)}" aria-label="Koordinate parcele" inputmode="decimal"></label><div class="row"><button class="chip" id="saveOk" type="button">Sačuvaj</button><button class="chip" id="saveNo" type="button">Otkaži</button></div><div class="msg" id="saveMsg">Koordinate su sada izabrane lokacije. Za drugu parcelu nalepi njene koordinate iz Google Maps.</div></div>`;
     $("#saveName").focus();$("#saveName").select();
-  }else if(e.target.id==="saveOk"){
+  }else if(e.target.id==="saveOk"||e.target.id==="saveForce"){
     const n=$("#saveName").value.trim()||state.loc.name;
-    const l={...state.loc,name:n};const ex=state.saved.findIndex(p=>Math.abs(p.lat-l.lat)<1e-4&&Math.abs(p.lon-l.lon)<1e-4);if(ex>=0)state.saved[ex]=l;else state.saved.push(l);store.set("ap.saved",state.saved);state.loc=l;store.set("ap.loc",l);resetSave();renderSaved();renderNow();
+    const c=parseCoord($("#saveCoord").value);
+    if(!c){$("#saveMsg").textContent="Koordinate nisu ispravne. Primer: 43.58, 21.33";return}
+    const moved=Math.abs(c.lat-state.loc.lat)>1e-4||Math.abs(c.lon-state.loc.lon)>1e-4;
+    const l={name:n,sub:moved?"koordinate":(state.loc.sub||""),lat:c.lat,lon:c.lon};
+    const ex=state.saved.findIndex(p=>Math.abs(p.lat-l.lat)<1e-4&&Math.abs(p.lon-l.lon)<1e-4);
+    if(ex>=0&&state.saved[ex].name!==n&&e.target.id!=="saveForce"){
+      $("#saveMsg").innerHTML=`Na ovim koordinatama već je parcela „${esc(state.saved[ex].name)}“. Za novu parcelu unesi njene koordinate. <button class="linkbtn" type="button" id="saveForce">Ipak preimenuj „${esc(state.saved[ex].name)}“ u „${esc(n)}“</button>`;return}
+    if(ex>=0)state.saved[ex]=l;else state.saved.push(l);
+    store.set("ap.saved",state.saved);resetSave();
+    if(moved)setLoc(l);else{state.loc=l;store.set("ap.loc",l);renderSaved();renderNow();renderMini()}
   }else if(e.target.id==="saveNo")resetSave();
 });
-$("#savebox").addEventListener("keydown",e=>{if(e.target.id==="saveName"){if(e.key==="Enter")$("#saveOk").click();if(e.key==="Escape")resetSave()}});
+$("#savebox").addEventListener("keydown",e=>{if(e.target.id==="saveName"||e.target.id==="saveCoord"){if(e.key==="Enter")$("#saveOk").click();if(e.key==="Escape")resetSave()}});
+function parseCoord(v){const m=String(v).match(/^\s*(-?\d{1,2}(?:[.,]\d+)?)\s*[,; ]\s*(-?\d{1,3}(?:[.,]\d+)?)\s*$/);if(!m)return null;const la=+m[1].replace(",","."),lo=+m[2].replace(",",".");if(Math.abs(la)>90||Math.abs(lo)>180)return null;return{lat:la,lon:lo}}
 function resetSave(){$("#savebox").innerHTML='<button class="chip" id="saveBtn" type="button">+ Sačuvaj parcelu</button>'}
 
 let qT=null;
@@ -1723,14 +1746,18 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{if(sta
 function renderMgr(msg){
   const box=$("#mgr");
   box.innerHTML=`<div class="eyebrow">Sačuvane parcele (${state.saved.length})</div>
-   <ul>${state.saved.map((p,k)=>`<li><input value="${esc(p.name)}" data-rn="${k}" aria-label="Naziv parcele"><span class="c num">${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}</span><button class="chip" type="button" data-up="${k}" ${k?"":"disabled"} aria-label="Pomeri gore">↑</button><button class="chip" type="button" data-rm="${k}" data-hold title="Drži 3 sekunde za brisanje">Obriši<span class="hold-fill"></span></button></li>`).join("")||'<li class="msg">Još nema sačuvanih parcela. Izaberi lokaciju i klikni „+ Sačuvaj parcelu“.</li>'}</ul>
+   <ul>${state.saved.map((p,k)=>`<li><input value="${esc(p.name)}" data-rn="${k}" aria-label="Naziv parcele"><input class="c num" data-rc="${k}" value="${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}" aria-label="Koordinate parcele ${esc(p.name)}" inputmode="decimal" style="flex:0 1 170px"><button class="chip" type="button" data-up="${k}" ${k?"":"disabled"} aria-label="Pomeri gore">↑</button><button class="chip" type="button" data-rm="${k}" data-hold title="Drži 3 sekunde za brisanje">Obriši<span class="hold-fill"></span></button></li>`).join("")||'<li class="msg">Još nema sačuvanih parcela. Izaberi lokaciju i klikni „+ Sačuvaj parcelu“.</li>'}</ul>
    <div class="eyebrow" style="margin-top:6px">Prenos na drugi uređaj</div>
    <div class="msg">Kopiraj ovaj tekst i nalepi ga u Agroprognozu na telefonu ili drugom računaru, pa klikni „Uvezi“. Postojeće parcele ostaju, dodaju se samo nove.</div>
    <textarea id="mgrText" spellcheck="false">${esc(JSON.stringify(state.saved.map(p=>({name:p.name,lat:+p.lat.toFixed(5),lon:+p.lon.toFixed(5),sub:p.sub||""}))))}</textarea>
    <div class="row"><button class="btn" type="button" id="mgrCopy">Kopiraj</button><button class="btn primary" type="button" id="mgrImport">Uvezi</button><button class="btn" type="button" id="mgrClose">Zatvori</button><span class="msg" id="mgrMsg">${msg||""}</span></div>`;
 }
 $("#mgrBtn").addEventListener("click",()=>{const b=$("#mgr");b.hidden=!b.hidden;$("#mgrBtn").setAttribute("aria-expanded",!b.hidden);if(!b.hidden)renderMgr()});
-$("#mgr").addEventListener("change",e=>{const i=e.target.closest("[data-rn]");if(!i)return;const k=+i.dataset.rn;const v=i.value.trim();if(v){state.saved[k].name=v;store.set("ap.saved",state.saved);renderSaved()}});
+$("#mgr").addEventListener("change",e=>{
+  const ci=e.target.closest("[data-rc]");
+  if(ci){const k=+ci.dataset.rc,c=parseCoord(ci.value),p=state.saved[k];if(!c){renderMgr("Koordinate nisu ispravne. Primer: 43.58, 21.33");return}
+    const wasCur=Math.abs(p.lat-state.loc.lat)<1e-4&&Math.abs(p.lon-state.loc.lon)<1e-4;p.lat=c.lat;p.lon=c.lon;p.sub="koordinate";store.set("ap.saved",state.saved);renderSaved();renderMgr("Koordinate parcele „"+p.name+"“ su promenjene.");if(wasCur)setLoc({...p});return}
+  const i=e.target.closest("[data-rn]");if(!i)return;const k=+i.dataset.rn;const v=i.value.trim();if(v){state.saved[k].name=v;store.set("ap.saved",state.saved);renderSaved()}});
 $("#mgr").addEventListener("click",async e=>{
   const t=e.target;
   if(t.dataset.rm!=null)return; // brisanje samo držanjem
@@ -1757,6 +1784,13 @@ const TEAM_PARCELS=[
   {name:"Latkovac",sub:"Aleksandrovac",lat:43.4800,lon:21.0472},
   {name:"Sopot",sub:"Grad Beograd",lat:44.5196,lon:20.5754}
 ];
+function migrateTeam2(){
+  if(store.get("ap.mig.team2",false))return;
+  const norm=x=>x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  const ks=TEAM_PARCELS[0];
+  if(!state.saved.some(p=>norm(p.name)==="krusevac")&&state.saved.some(p=>Math.abs(p.lat-ks.lat)<0.01&&Math.abs(p.lon-ks.lon)<0.01)){state.saved.unshift({...ks})}
+  store.setLocal("ap.mig.team2",true);store.setLocal("ap.saved",state.saved);
+}
 function migrateTeam(){
   if(store.get("ap.mig.team1",false))return false;
   const norm=x=>x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
@@ -1772,7 +1806,7 @@ function migrateTeam(){
 (async()=>{
   if(!state.saved.length){const b=await idb.get("ap.saved");if(Array.isArray(b)&&b.length){state.saved=b;try{localStorage.setItem("ap.saved",JSON.stringify(b))}catch(e){}}}
   else idb.put("ap.saved",state.saved);
-  migrateTeam();
+  migrateTeam();migrateTeam2();
   const hadLoc=(()=>{try{return !!localStorage.getItem("ap.loc")}catch(e){return false}})();
   if(!hadLoc){const l=await idb.get("ap.loc");if(l&&typeof l.lat==="number")state.loc=l;else if(state.saved[0])state.loc=state.saved[0]}
   renderSaved();
