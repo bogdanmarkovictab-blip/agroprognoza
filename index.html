@@ -310,8 +310,8 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
 .hrcol .ww.hi{color:var(--warn);font-weight:600}
 .hrcol.night{background:color-mix(in srgb,var(--ink) 4%,transparent)}
 .hrline{position:absolute;left:0;width:100%;pointer-events:none;z-index:0;overflow:visible}
-.hrline polyline{fill:none;stroke:var(--m4);stroke-width:2.4;vector-effect:non-scaling-stroke;stroke-linejoin:round}
-.hrline polyline.ec{stroke:var(--m1);stroke-width:2;stroke-dasharray:5 3}
+.hrline path{fill:none;stroke:var(--m4);stroke-width:2.6;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
+.hrline path.ec{stroke:var(--m1);stroke-width:2;stroke-dasharray:5 3}
 .hrcol .uvh{font-size:11px;font-weight:600;color:var(--ink-2);height:15px;line-height:15px;display:flex;align-items:center;gap:3px}
 .hrcol .uvh i{width:8px;height:8px;border-radius:50%;display:inline-block}
 .hrcol .ecv{font-size:11px;font-weight:600;color:var(--m1);height:14px;line-height:14px}
@@ -328,7 +328,7 @@ table.htab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
 .trow:hover{background:var(--surface-2)}
 .trow.sel{background:var(--accent-soft)}
 @media (max-width:900px){.hero>.now{order:1} .hero>.hourly{order:2} .hero>.alerts{order:3}}
-@media (max-width:600px){.hrgrid{grid-template-columns:repeat(24,50px)}}
+
 .acc-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px}
 .acc-sum .htile .v{font-size:22px}
 table.acct{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13px;min-width:560px}
@@ -1091,7 +1091,7 @@ function renderHourly(){
     const label=!sel&&k===0?"Sada":(h===0&&!sel?DOW[dateOf(t).getUTCDay()]:String(h).padStart(2,"0")+"h");
     return `<div class="hrcol ${h===0&&k>0?"nd":""} ${night?"night":""}" title="${esc(tip)}">
       <span class="hh ${!sel&&k===0?"cur":""}">${label}</span>${icon(nearCode(C[i]),night).replace("<svg","<svg class='ic'")}
-      <div class="tz">${v==null?"":`<span class="tv" style="top:${(Y(v)-18).toFixed(1)}px">${Math.round(v)}°</span>`}</div>
+      <div class="tz">${v==null?"":`<span class="tv" style="top:${(Y(v)-22).toFixed(1)}px">${Math.round(v)}°</span>`}</div>
       ${showEc?`<span class="ecv ${dv!=null&&Math.abs(dv)>=2?"big":""}" title="ECMWF IFS${dv!=null?`, odstupanje ${dv>0?"+":""}${r1(dv)} °C`:""}">${ev==null?"–":Math.round(ev)+"°"}</span>`:""}
       ${showUv?(()=>{const u=agroAt("uv_index",t);if(u==null||u<0.5)return `<span class="uvh"></span>`;const L=uvLvl(u);return `<span class="uvh" title="UV ${r1(u)} · ${L[1]}"><i style="background:${L[2]}"></i>${Math.round(u)}</span>`})():""}
       <span class="rr">${rain}</span>
@@ -1104,9 +1104,12 @@ function renderHourly(){
   const n=idx.length;const pts=idx.map((i,k)=>T[i]==null?null:[(k+0.5)/n*100,Y(T[i])]).filter(Boolean);
   const top=4+12+2+32+2; // visina sata + ikone
   const ept=showEc?idx.map((i,k)=>E[i]==null?null:[(k+0.5)/n*100,Y(E[i])]).filter(Boolean):[];
-  const pl=(a,cls)=>a.length?`<polyline class="${cls}" points="${a.map(p=>p[0].toFixed(2)+","+p[1].toFixed(1)).join(" ")}"/>`:"";
+  // glatka kriva kroz tačke (Catmull-Rom → Bezier), produžena do ivica
+  const pl=(a,cls)=>{if(!a.length)return"";const P=[[0,a[0][1]],...a,[100,a[a.length-1][1]]];let d=`M${P[0][0]},${P[0][1].toFixed(1)}`;
+    for(let k=0;k<P.length-1;k++){const p0=P[k-1]||P[k],p1=P[k],p2=P[k+1],p3=P[k+2]||p2;const c1=[p1[0]+(p2[0]-p0[0])/6,p1[1]+(p2[1]-p0[1])/6],c2=[p2[0]-(p3[0]-p1[0])/6,p2[1]-(p3[1]-p1[1])/6];d+=` C${c1[0].toFixed(2)},${c1[1].toFixed(1)} ${c2[0].toFixed(2)},${c2[1].toFixed(1)} ${p2[0].toFixed(2)},${p2[1].toFixed(1)}`}
+    return `<path class="${cls}" d="${d}"/>`};
   const svg=`<svg class="hrline" style="top:${top}px;height:80px" viewBox="0 0 100 80" preserveAspectRatio="none" aria-hidden="true">${pl(ept,"ec")}${pl(pts,"md")}</svg>`;
-  $("#hrScroll").innerHTML=`<div class="hrgrid">${svg}${cols}</div><div class="legend hrleg" style="margin-top:8px">
+  $("#hrScroll").innerHTML=`<div class="hrgrid" style="width:max(100%,${idx.length*(innerWidth<600?50:46)}px);grid-template-columns:repeat(${idx.length},minmax(0,1fr))">${svg}${cols}</div><div class="legend hrleg" style="margin-top:8px">
     <span><i class="ln" style="background:var(--m4)"></i>Medijana modela</span>
     ${ecOk?`<button type="button" class="tog" id="hrEcTog" aria-pressed="${showEc}"><span class="sw" style="background:var(--m1)"></span>ECMWF IFS ${showEc?"uključen · plavi brojevi":"isključen"}</button>`:""}
     ${uvOk?`<button type="button" class="tog" id="hrUvTog" aria-pressed="${showUv}"><span class="sw" style="background:var(--uv2);height:8px;width:8px;border-radius:50%"></span>UV ${showUv?"uključen":"isključen"}</button>`:""}
