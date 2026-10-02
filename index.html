@@ -462,7 +462,6 @@ body{padding-top:calc(58px + env(safe-area-inset-top,0px));padding-bottom:calc(7
 /* okolina */
 .near-h{display:flex;align-items:center;gap:8px;color:var(--ink-2)}
 .near-h svg{width:22px;height:22px}
-.compass{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .cp{border:1px solid var(--line);border-radius:16px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--surface);min-width:0;cursor:pointer;color:var(--ink)}
 .cp:hover{background:var(--surface-2)}
 .cp.mid{background:var(--accent-soft);border-color:var(--accent)}
@@ -542,7 +541,6 @@ body{padding-top:calc(58px + env(safe-area-inset-top,0px));padding-bottom:calc(7
 </section>
 </div>
 <div class="view" id="vOkolina" data-view="okolina">
-  <section class="panel near-grid-wrap"><div class="near-h"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 5l2.6 7L12 19l-2.6-7z" fill="currentColor"/></svg><b>8 km</b></div><div class="compass" id="compass"><div class="loading">Učitavam…</div></div></section>
   <section class="near-list" id="nearList"></section>
 </div>
 <div class="view" id="vAgro" data-view="agro">
@@ -1843,26 +1841,24 @@ const near={key:null,data:null,at:0};
 function distKm(a,b){const R=6371,dLa=(b.lat-a.lat)*Math.PI/180,dLo=(b.lon-a.lon)*Math.PI/180;const x=Math.sin(dLa/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
 async function renderNear(){
   const c=state.loc,R=8,dl=R/111,dn=R/(111*Math.cos(c.lat*Math.PI/180));
-  const ring=[["SZ",1,-1],["S",1,0],["SI",1,1],["Z",0,-1],["",0,0],["I",0,1],["JZ",-1,-1],["J",-1,0],["JI",-1,1]].map(([d,a,b])=>({dir:d,lat:c.lat+a*dl*(a&&b?0.7071:1),lon:c.lon+b*dn*(a&&b?0.7071:1),mid:!a&&!b}));
+  const ring=[];
   const parcels=state.saved.map(p=>({...p,km:distKm(c,p)})).sort((a,b)=>a.km-b.km);
   const pts=[...ring,...parcels];
+  if(!pts.length){$("#nearList").innerHTML='<div class="loading">Nema sačuvanih parcela. Dodaj ih preko ☰.</div>';return}
   const key=pts.map(p=>p.lat.toFixed(3)+","+p.lon.toFixed(3)).join(";");
   if(near.key!==key||Date.now()-near.at>15*60*1000){
-    $("#compass").innerHTML='<div class="loading" style="grid-column:1/-1">Učitavam…</div>';$("#nearList").innerHTML="";
+    $("#nearList").innerHTML='<div class="loading">Učitavam…</div>';
     try{
       const u=`https://api.open-meteo.com/v1/forecast?latitude=${pts.map(p=>p.lat.toFixed(4)).join(",")}&longitude=${pts.map(p=>p.lon.toFixed(4)).join(",")}&current=temperature_2m,weather_code,is_day&hourly=soil_temperature_6cm&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&forecast_days=1&timezone=auto`;
       let j=await getJSON(u);if(!Array.isArray(j))j=[j];
       near.key=key;near.at=Date.now();near.data=j;
-    }catch(e){$("#compass").innerHTML='<div class="err-box" style="grid-column:1/-1">Okolina nije učitana: '+esc(e.message)+'</div>';return}
+    }catch(e){$("#nearList").innerHTML='<div class="err-box">Okolina nije učitana: '+esc(e.message)+'</div>';return}
   }
   const J=near.data;
   const val=k=>{const o=J[k];if(!o)return{};const cur=o.current||{};const ht=o.hourly?.time||[],hi=ht.indexOf((cur.time||"").slice(0,13)+":00");return{T:cur.temperature_2m,C:cur.weather_code,N:cur.is_day===0,mx:o.daily?.temperature_2m_max?.[0],mn:o.daily?.temperature_2m_min?.[0],p:o.daily?.precipitation_sum?.[0],s6:hi>=0?o.hourly.soil_temperature_6cm?.[hi]:null}};
-  $("#compass").innerHTML=ring.map((r,k)=>{const v=val(k);return `<button type="button" class="cp ${r.mid?"mid":""}" data-ri="${k}" title="${r.mid?esc(c.name):r.dir+" "+R+" km"}"><span class="dir">${r.mid?"●":r.dir}</span>${icon(v.C,v.N)}<span class="v num">${v.T==null?"–":Math.round(v.T)+"°"}</span><span class="hl2 num">${r0(v.mx)}° / ${r0(v.mn)}°</span><span class="r num">${(v.p||0)>=0.1?r1(v.p)+" mm":""}</span></button>`}).join("");
   $("#nearList").innerHTML=parcels.map((p,k)=>{const v=val(ring.length+k);const cur=p.km<0.05;return `<button type="button" class="nl ${cur?"cur":""}" data-pi="${k}">${icon(v.C,v.N)}<span class="n">${esc(p.name)}</span><span class="v num">${v.T==null?"–":Math.round(v.T)+"°"}</span><span class="row2 num"><span class="km">${cur?"●":r0(p.km)+" km"}</span><span>${r0(v.mx)}°/${r0(v.mn)}°</span>${(v.p||0)>=0.1?`<span class="rn">${r1(v.p)} mm</span>`:""}${v.s6!=null?`<span class="so">${r0(v.s6)}°</span>`:""}</span></button>`}).join("");
   near.ring=ring;near.parcels=parcels;
 }
-$("#compass").addEventListener("click",e=>{const b=e.target.closest("[data-ri]");if(!b)return;const r=near.ring[+b.dataset.ri];if(r.mid){showView("vreme");return}
-  setLoc({name:`${state.loc.name} ${r.dir} 8 km`,sub:"okolina",lat:+r.lat.toFixed(4),lon:+r.lon.toFixed(4)});showView("vreme")});
 $("#nearList").addEventListener("click",e=>{const b=e.target.closest("[data-pi]");if(!b)return;setLoc(near.parcels[+b.dataset.pi]);showView("vreme")});
 
 /* ---------- locations ---------- */
