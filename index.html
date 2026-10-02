@@ -409,9 +409,87 @@ table.acct{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
   .trow .rn small{display:none}
   .trow .tags{grid-column:1/-1}
 }
+/* ===== jednostavan izgled (nebo, ikonice, donja navigacija) ===== */
+body{padding-top:calc(58px + env(safe-area-inset-top,0px));padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+:root{--stick-top:calc(58px + env(safe-area-inset-top,0px))}
+.mini{display:none!important}
+.topbar{position:fixed;top:0;left:0;right:0;z-index:50;height:calc(58px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 8px 0;display:flex;align-items:center;gap:6px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.tb-btn{width:44px;height:44px;border:0;background:none;border-radius:12px;display:grid;place-items:center;color:var(--ink);flex:0 0 auto}
+.tb-btn:hover{background:var(--surface-2)}
+.tb-btn svg{width:24px;height:24px}
+.tb-title{flex:1;min-width:0;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink);padding:0}
+.tb-title b{font-family:var(--display);font-size:22px;font-weight:600;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.tb-dots{display:flex;gap:5px;height:6px}
+.tb-dots i{width:6px;height:6px;border-radius:50%;background:var(--line-2)}
+.tb-dots i.on{background:var(--ink)}
+.bar{display:none!important}
+.bar.open{display:flex!important;position:fixed;top:calc(58px + env(safe-area-inset-top,0px));left:0;right:0;z-index:48;padding:12px 16px 14px;background:var(--bg);box-shadow:0 14px 30px rgba(0,0,0,.25);max-height:calc(100vh - 140px);overflow-y:auto}
+.bar .brand{display:none}
+.view{display:none;flex-direction:column;gap:18px}
+.view.on{display:flex}
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;justify-content:center;gap:4px;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+.bnav button{flex:0 1 140px;border:0;background:none;border-radius:14px;padding:6px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--muted);font-size:11.5px;font-weight:600}
+.bnav button svg{width:26px;height:26px}
+.bnav button[aria-current="page"]{color:var(--accent);background:var(--accent-soft)}
+/* nebo */
+.sky{position:relative;overflow:hidden;border-radius:24px;min-height:330px;color:#fff;padding:22px 22px 0;display:flex;flex-direction:column;background:linear-gradient(180deg,var(--s1),var(--s2));touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.sky .scene{position:absolute;left:0;right:0;bottom:0;width:100%;height:46%;pointer-events:none}
+.sky .bigic{position:absolute;right:14px;top:10px;width:150px;height:150px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.18))}
+.sky .t{font-family:var(--display);font-size:104px;font-weight:600;line-height:.9;letter-spacing:-.02em;position:relative;text-shadow:0 2px 12px rgba(0,0,0,.18)}
+.sky .c{font-size:18px;font-weight:600;position:relative;text-shadow:0 1px 6px rgba(0,0,0,.25);margin-top:6px}
+.sky .hl{font-size:16px;position:relative;display:flex;gap:12px;margin-top:4px;text-shadow:0 1px 6px rgba(0,0,0,.25)}
+.sky .nav{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:56px;border:0;border-radius:12px;background:rgba(255,255,255,.14);color:#fff;font-size:22px;display:none}
+.sky .nav.l{left:8px} .sky .nav.r{right:8px}
+@media (hover:hover){.sky:hover .nav{display:block}}
+.sky.rain::after,.sky.storm::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(105deg,transparent 0 14px,rgba(255,255,255,.18) 14px 15px);background-size:200% 200%;animation:rainfall .9s linear infinite;pointer-events:none}
+.sky.snow::after{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.85) 1.4px,transparent 1.6px);background-size:26px 26px;animation:snowfall 4s linear infinite;pointer-events:none}
+@keyframes rainfall{to{background-position:-40px 120px}}
+@keyframes snowfall{to{background-position:20px 120px}}
+@media (prefers-reduced-motion:reduce){.sky::after{animation:none!important}}
+.sky.swipe-l{animation:swl .25s ease} .sky.swipe-r{animation:swr .25s ease}
+@keyframes swl{from{transform:translateX(30px);opacity:.4}} @keyframes swr{from{transform:translateX(-30px);opacity:.4}}
+/* ikonice ispod neba */
+.qtiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.qt{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;text-align:center}
+.qt svg{width:34px;height:34px}
+.qt .v{font-family:var(--display);font-size:24px;font-weight:600;line-height:1;white-space:nowrap}
+.qt .s{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+@media (max-width:700px){.qtiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* bez objašnjenja */
+.panel-head p,.note:not(.src-note),.ten-note,.hrleg>span:not(.keep),.legend.hl-help{display:none!important}
+.view[data-view="vreme"] .eyebrow{display:none}
+@media (min-width:900px){.sky{min-height:300px}}
+/* okolina */
+.near-h{display:flex;align-items:center;gap:8px;color:var(--ink-2)}
+.near-h svg{width:22px;height:22px}
+.compass{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.cp{border:1px solid var(--line);border-radius:16px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--surface);min-width:0;cursor:pointer;color:var(--ink)}
+.cp:hover{background:var(--surface-2)}
+.cp.mid{background:var(--accent-soft);border-color:var(--accent)}
+.cp .dir{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em}
+.cp svg{width:38px;height:38px}
+.cp .v{font-family:var(--display);font-size:26px;font-weight:600;line-height:1}
+.cp .hl2{font-size:12px;color:var(--ink-2)}
+.cp .r{font-size:12px;color:var(--rain);font-weight:600;min-height:15px}
+.near-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.nl{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:4px 12px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px 14px;cursor:pointer;text-align:left;color:var(--ink);font:inherit}
+.nl:hover{background:var(--surface-2)}
+.nl.cur{border-color:var(--accent);background:var(--accent-soft)}
+.nl svg{width:44px;height:44px;grid-row:1/3}
+.nl .n{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nl .km{font-size:12px;color:var(--muted)}
+.nl .v{font-family:var(--display);font-size:30px;font-weight:600;line-height:1;grid-row:1/3;grid-column:3;text-align:right}
+.nl .row2{display:flex;gap:10px;font-size:12.5px;color:var(--ink-2);flex-wrap:wrap}
+.nl .row2 .rn{color:var(--rain);font-weight:600}
+.nl .row2 .so{color:var(--soil-ink);font-weight:600}
 </style>
 </head>
 <body>
+<div class="topbar" id="topbar">
+  <button type="button" class="tb-btn" id="tbList" aria-label="Parcele i pretraga" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button>
+  <button type="button" class="tb-title" id="tbTitle"><b id="tbName">…</b><span class="tb-dots" id="tbDots"></span></button>
+  <button type="button" class="tb-btn" id="tbSearch" aria-label="Pretraga"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+</div>
 <div class="wrap">
 
 <div class="mini" id="mini" aria-hidden="true">
@@ -442,9 +520,9 @@ table.acct{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
   <div class="mgr" id="authPanel" hidden></div>
 </header>
 
-<section class="hero">
-  <div class="now" id="now"><div class="skel" style="width:60%"></div><div class="skel" style="width:40%;height:50px"></div></div>
-  <div class="alerts" id="alerts"></div>
+<div class="view on" id="vVreme" data-view="vreme">
+  <section class="sky" id="sky" aria-live="polite"><div class="loading" style="color:#fff">Učitavam…</div></section>
+  <div class="qtiles" id="qtiles"></div>
   <div class="panel hourly" id="hourlyPanel">
     <div class="panel-head" style="align-items:center">
       <div><div class="eyebrow">Po satima</div><h2 id="hrTitle">Narednih 24 h</h2></div>
@@ -452,8 +530,6 @@ table.acct{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
     </div>
     <div class="hrscroll" id="hrScroll"><div class="loading">Učitavam…</div></div>
   </div>
-</section>
-
 <section class="panel">
   <div class="panel-head">
     <div>
@@ -464,6 +540,18 @@ table.acct{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
   </div>
   <div class="ten" id="ten"><div class="loading">Učitavam…</div></div>
 </section>
+</div>
+<div class="view" id="vOkolina" data-view="okolina">
+  <section class="panel near-grid-wrap"><div class="near-h"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 5l2.6 7L12 19l-2.6-7z" fill="currentColor"/></svg><b>8 km</b></div><div class="compass" id="compass"><div class="loading">Učitavam…</div></div></section>
+  <section class="near-list" id="nearList"></section>
+</div>
+<div class="view" id="vAgro" data-view="agro">
+<section class="hero">
+  <div class="now" id="now"><div class="skel" style="width:60%"></div><div class="skel" style="width:40%;height:50px"></div></div>
+  <div class="alerts" id="alerts"></div>
+</section>
+
+
 
 <section class="panel">
   <div class="panel-head">
@@ -621,10 +709,16 @@ table.acct{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
     </div>
   </div>
   <div class="sources" id="sources"></div>
-  <p class="note">Podaci: Open-Meteo.com (CC BY 4.0), sirovi izlazi nacionalnih meteoroloških servisa. Google i Frog Weather nemaju javno dostupne podatke pa ne mogu biti ovde. Ovo je pomoćni alat; za odluke o tretmanima uvek pogledaj i stanje na parceli.</p>
+  <p class="note src-note">Podaci: Open-Meteo.com (CC BY 4.0), sirovi izlazi nacionalnih meteoroloških servisa. Google i Frog Weather nemaju javno dostupne podatke pa ne mogu biti ovde. Ovo je pomoćni alat; za odluke o tretmanima uvek pogledaj i stanje na parceli.</p>
 </section>
+</div><!-- /vAgro -->
 
 </div>
+<nav class="bnav" id="bnav" aria-label="Prikaz">
+  <button type="button" data-go="vreme" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="3.5" fill="currentColor"/><path d="M8 19h9a3.5 3.5 0 0 0 .2-7 4.6 4.6 0 0 0-8.8 1.2A2.9 2.9 0 0 0 8 19z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Vreme</span></button>
+  <button type="button" data-go="okolina"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="2.3" fill="currentColor"/></svg><span>Okolina</span></button>
+  <button type="button" data-go="agro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V10M12 13c-3.5 0-6-2.2-6-6 3.5 0 6 2.2 6 6zm0-2c0-3.4 2.3-6 6-6 0 3.8-2.5 6-6 6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Agro</span></button>
+</nav>
 
 <script>
 "use strict";
@@ -829,7 +923,7 @@ function dailyFor(get){ // get(key)->array
 
 /* ---------- render ---------- */
 function renderAll(){
-  renderSaved();renderNow();renderHourly();renderTen();renderMatrix();renderToggles();renderChart();renderSpray();renderSoil();renderAlerts();renderSources();
+  renderSaved();renderNow();renderSpray();renderSky();renderHourly();renderTen();renderMatrix();renderToggles();renderChart();renderSpray();renderSoil();renderAlerts();renderSources();
 }
 function renderNowSkeleton(){
   $("#now").innerHTML=`<div class="eyebrow">Lokacija</div><h1>${esc(state.loc.name)}</h1><div class="coords num">${state.loc.lat.toFixed(4)}, ${state.loc.lon.toFixed(4)}</div><div class="skel" style="width:50%;height:56px;margin-top:8px"></div><div class="skel" style="width:70%"></div>`;
@@ -906,7 +1000,7 @@ async function fillRainNow(){
     const nc=await idb.get("norm:"+hkey());
     if(nc&&nc.days){const a=start.slice(5),b=stop.slice(5);norm=nc.days.filter(d=>d.md>=a&&d.md<=b).reduce((x,d)=>x+(d.p||0),0);if(norm>1)pct=Math.round(sum/norm*100)}
     rainM.key=key;rainM.val={sum,pre,norm,pct};
-    if(hkey()+":"+start+":"+stop===key)show(rainM.val);
+    if(hkey()+":"+start+":"+stop===key){show(rainM.val);try{renderTiles()}catch(e){}}
   }catch(e){el.hidden=true}
 }
 function renderNow(){
@@ -1290,6 +1384,7 @@ function renderSources(){
 }
 
 function renderMini(){
+  try{renderTopbar()}catch(e){}
   const l=state.loc;
   $("#miniName").textContent=l.name;
   $("#miniSub").textContent=[l.sub,l.lat.toFixed(4)+", "+l.lon.toFixed(4)].filter(Boolean).join(" · ");
@@ -1298,7 +1393,7 @@ function renderMini(){
 }
 (function(){
   const mini=$("#mini");
-  const set=v=>{mini.classList.toggle("show",v);mini.setAttribute("aria-hidden",String(!v));document.documentElement.style.setProperty("--stick-top",v?mini.offsetHeight+"px":"env(safe-area-inset-top, 0px)")};
+  const set=v=>{mini.classList.toggle("show",v);mini.setAttribute("aria-hidden",String(!v));void 0};
   if("IntersectionObserver" in window){
     new IntersectionObserver(es=>set(!es[0].isIntersecting),{threshold:0}).observe($("#now"));
   }
@@ -1639,6 +1734,134 @@ $("#accOut").addEventListener("click",e=>{if(e.target.id==="accRun")accRun()});
 seg("#accLead",v=>{acc.lead=+v;if(acc.data)accRender()});
 seg("#accDays",v=>{acc.days=+v;if(acc.data){acc.data=null;accRun()}});
 
+/* ===== jednostavan izgled: nebo, ikonice, prevlačenje, okolina ===== */
+const SKYC={clear:["#3d8fe6","#9fd0ff"],partly:["#4f8fcf","#b4d3ec"],cloudy:["#6f7f8f","#b3bdc7"],rain:["#46566a","#8693a2"],storm:["#2b3340","#58616f"],snow:["#8fa8bf","#dde8f1"],fog:["#9aa4ad","#d3d8dc"],
+  nclear:["#0b1736","#2a4a86"],npartly:["#14213d","#3b5277"],ncloudy:["#1b2430","#3a4553"],nrain:["#151c26","#36414f"],nstorm:["#10141b","#2c333d"],nsnow:["#3b4c61","#7b8ea3"],nfog:["#2a3138","#59626b"]};
+function skyKind(c){if(c==null)return"cloudy";if(c===0||c===1)return"clear";if(c===2)return"partly";if(c===3)return"cloudy";if(c===45||c===48)return"fog";if(c>=95)return"storm";if((c>=71&&c<=77)||c>=85)return"snow";if(c>=51)return"rain";return"cloudy"}
+function scene(kind,night){
+  const pal=kind==="snow"?["#e9f0f6","#d8e3ec","#c9d7e3"]:night?["#1d3527","#16291e","#102017"]:(kind==="rain"||kind==="storm"||kind==="fog"||kind==="cloudy")?["#6e9663","#5a8550","#4a7442"]:["#86c06f","#6aab55","#559843"];
+  const rows=Array.from({length:9},(_,k)=>{const x=-40+k*60;return `<path d="M${x} 140 Q${x+70} 108 ${x+150} 96" stroke="${night?"#0c1912":"rgba(0,0,0,.12)"}" stroke-width="2" fill="none"/>`}).join("");
+  return `<svg class="scene" viewBox="0 0 400 140" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 70 Q60 40 130 58 T260 50 T400 62 V140 H0z" fill="${pal[0]}"/>
+    <path d="M0 92 Q90 66 190 84 T400 80 V140 H0z" fill="${pal[1]}"/>
+    <path d="M0 112 Q120 92 240 104 T400 98 V140 H0z" fill="${pal[2]}"/>${rows}
+  </svg>`;
+}
+function isNight(i){const d=series(activeModels()[0]?.id,"is_day");if(d&&d[i]!=null)return d[i]===0;const h=hourOf(state.time[i]||"T12");return h<6||h>=20}
+function renderTopbar(){
+  $("#tbName").textContent=state.loc.name;
+  const k=state.saved.findIndex(p=>Math.abs(p.lat-state.loc.lat)<1e-4&&Math.abs(p.lon-state.loc.lon)<1e-4);
+  const n=state.saved.length;
+  $("#tbDots").innerHTML=n>1&&n<=12?state.saved.map((_,j)=>`<i class="${j===k?"on":""}"></i>`).join(""):"";
+}
+function renderSky(){
+  renderTopbar();
+  if(!state.time.length)return;
+  const i=state.nowIdx;
+  const T=median(activeModels().map(m=>series(m.id,"temperature_2m")?.[i]));
+  const code=nearCode(median(activeModels().map(m=>series(m.id,"weather_code")?.[i])));
+  const night=isNight(i),kind=skyKind(code);
+  const col=SKYC[(night?"n":"")+kind]||SKYC.cloudy;
+  const cd=dailyFor(k=>consensus(k));const today=cd[dayKeys()[0]]||{};
+  const sky=$("#sky");
+  sky.className="sky "+kind;
+  sky.style.setProperty("--s1",col[0]);sky.style.setProperty("--s2",col[1]);
+  sky.innerHTML=`${scene(kind,night)}${icon(code,night).replace("<svg","<svg class='bigic'")}
+    <div class="t num">${T==null?"–":Math.round(T)+"°"}</div>
+    <div class="c">${CODE_TXT(code)||""}</div>
+    <div class="hl num"><span>↑ ${r0(today.tmax)}°</span><span>↓ ${r0(today.tmin)}°</span>${(today.p||0)>=0.2?`<span>💧 ${r1(today.p)} mm</span>`:""}</div>
+    ${state.saved.length>1?`<button type="button" class="nav l" data-sw="-1" aria-label="Prethodna parcela">‹</button><button type="button" class="nav r" data-sw="1" aria-label="Sledeća parcela">›</button>`:""}`;
+  renderTiles();
+}
+const QI={
+  soil:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h18" stroke="#6aab55" stroke-width="2.2" stroke-linecap="round"/><path d="M12 10V5m0 2.5c-1.8 0-3-1.2-3-3 1.8 0 3 1.2 3 3zm0-.5c0-1.7 1.2-3 3-3 0 1.8-1.2 3-3 3z" stroke="#6aab55" stroke-width="1.6" fill="none" stroke-linejoin="round"/><rect x="3" y="12" width="18" height="3.2" rx="1" style="fill:var(--soil-ink)" opacity=".55"/><rect x="3" y="16.6" width="18" height="3.2" rx="1" style="fill:var(--soil-ink)"/></svg>`,
+  rain:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5c3.6 4.6 5.6 7.8 5.6 10.4a5.6 5.6 0 0 1-11.2 0c0-2.6 2-5.8 5.6-10.4z" style="fill:var(--ic-rain)"/><path d="M9.2 14.6a2.8 2.8 0 0 0 2.4 2.6" stroke="#fff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".7"/></svg>`,
+  hum:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5c3.6 4.6 5.6 7.8 5.6 10.4a5.6 5.6 0 0 1-11.2 0c0-2.6 2-5.8 5.6-10.4z" fill="none" style="stroke:var(--ic-rain)" stroke-width="1.8"/><text x="12" y="16.3" text-anchor="middle" font-size="6.5" font-weight="700" style="fill:var(--ic-rain)">%</text></svg>`,
+  spray:`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="9" width="8" height="11" rx="2" fill="none" style="stroke:var(--ink-2)" stroke-width="1.7"/><path d="M7 9V6.5h4V9M11 6.5h4l3-2" fill="none" style="stroke:var(--ink-2)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><g style="fill:var(--ic-rain)"><circle cx="20" cy="7" r=".9"/><circle cx="21" cy="9.6" r=".9"/><circle cx="19" cy="11" r=".9"/></g></svg>`
+};
+function windIcon(dir){return `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" style="stroke:var(--line-2)" stroke-width="1.6"/><g transform="rotate(${(dir||0)+180} 12 12)"><path d="M12 4.5l3.2 7.5H8.8z" style="fill:var(--ink)"/><path d="M12 12v7" style="stroke:var(--ink)" stroke-width="1.8" stroke-linecap="round"/></g></svg>`}
+function uvIcon(u){const L=uvLvl(u||0);return `<svg viewBox="0 0 24 24" aria-hidden="true"><g stroke="${L[2]}" stroke-width="1.8" stroke-linecap="round">${[0,45,90,135,180,225,270,315].map(a=>{const d=a*Math.PI/180;return `<path d="M${(12+Math.cos(d)*7.4).toFixed(1)} ${(12+Math.sin(d)*7.4).toFixed(1)}L${(12+Math.cos(d)*9.8).toFixed(1)} ${(12+Math.sin(d)*9.8).toFixed(1)}"/>`}).join("")}</g><circle cx="12" cy="12" r="5.2" fill="${L[2]}"/><text x="12" y="14.2" text-anchor="middle" font-size="5.6" font-weight="800" fill="#fff">UV</text></svg>`}
+function renderTiles(){
+  const i=state.nowIdx,t=state.time[i];if(!t)return;
+  const C=k=>median(activeModels().map(m=>series(m.id,k)?.[i]));
+  const s6=agroAt("soil_temperature_6cm",t),s0=agroAt("soil_temperature_0cm",t),s18=agroAt("soil_temperature_18cm",t);
+  const uv=agroAt("uv_index",t);
+  let uvMax=null;const a=state.agro;if(a&&a.hourly&&a.hourly.uv_index){a.hourly.time.forEach((tt,k)=>{if(tt.startsWith(t.slice(0,10))){const v=a.hourly.uv_index[k];if(v!=null&&(uvMax==null||v>uvMax))uvMax=v}})}
+  const night=isNight(i),uvShow=night||uv==null?uvMax:uv;
+  const sp=state._spray?.sd?.[0],w=state._spray?.wins?.[0];
+  const spCol=sp?{good:"var(--good)",warn:"var(--warn)",bad:"var(--bad)"}[sp.r]||"var(--muted)":"var(--muted)";
+  const rm=rainM.val;
+  const tiles=[
+    {ic:QI.soil,v:s6==null?"–":r1(s6)+"°",s:s0!=null?`${r0(s0)}° · ${r0(s18)}°`:"",tip:`Zemljište 6 cm${s0!=null?`, površina ${r1(s0)}°, 18 cm ${r1(s18)}°`:""}`},
+    {ic:uvIcon(uvShow),v:uvShow==null?"–":r1(uvShow),s:uvMax!=null?"max "+r1(uvMax):"",tip:"UV indeks"+(uvShow!=null?" · "+uvLvl(uvShow)[1]:"")},
+    {ic:QI.rain,v:rm?r0(rm.sum):"…",s:rm&&rm.pct!=null?rm.pct+"%":"mm",tip:"Izmerena kiša od početka meseca"+(rm&&rm.pct!=null?`, ${rm.pct}% proseka`:""),id:"tRain"},
+    {ic:windIcon(C("wind_direction_10m")),v:r0(C("wind_speed_10m")),s:"↯ "+r0(C("wind_gusts_10m")),tip:"Vetar km/h i udari"},
+    {ic:QI.hum,v:r0(C("relative_humidity_2m"))+"%",s:"",tip:"Vlažnost vazduha"},
+    {ic:QI.spray.replace('<svg','<svg style="color:'+spCol+'"'),v:`<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${spCol}"></span>`,s:w?`${w.a.t.slice(11,13)}–${String(hourOf(w.b.t)+1).padStart(2,"0")}h`:"–",tip:"Prskanje sada"+(w?`, sledeći povoljan termin ${dayLabel(w.a.t)} ${w.a.t.slice(11,16)}`:"")},
+  ];
+  $("#qtiles").innerHTML=tiles.map(x=>`<div class="qt" title="${esc(x.tip)}" ${x.id?`id="${x.id}"`:""}>${x.ic}<span class="v num">${x.v}</span><span class="s num">${x.s}</span></div>`).join("");
+}
+/* prevlačenje prstom između parcela */
+function swipeLoc(dir){
+  const n=state.saved.length;if(n<2)return;
+  let k=state.saved.findIndex(p=>Math.abs(p.lat-state.loc.lat)<1e-4&&Math.abs(p.lon-state.loc.lon)<1e-4);
+  k=k<0?0:(k+dir+n)%n;
+  const sky=$("#sky");sky.classList.remove("swipe-l","swipe-r");void sky.offsetWidth;sky.classList.add(dir>0?"swipe-l":"swipe-r");
+  setLoc(state.saved[k]);
+}
+(function(){
+  const sky=$("#sky");let x0=null,y0=null;
+  sky.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY},{passive:true});
+  sky.addEventListener("touchend",e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0,dy=e.changedTouches[0].clientY-y0;x0=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5)swipeLoc(dx<0?1:-1)},{passive:true});
+  sky.addEventListener("click",e=>{const b=e.target.closest("[data-sw]");if(b)swipeLoc(+b.dataset.sw)});
+  document.addEventListener("keydown",e=>{if(currentView()!=="vreme"||e.target.closest("input,textarea,select"))return;if(e.key==="ArrowLeft")swipeLoc(-1);if(e.key==="ArrowRight")swipeLoc(1)});
+})();
+/* gornja traka i donja navigacija */
+function toggleSheet(open,focusSearch){
+  const bar=$("#bar");const o=open??!bar.classList.contains("open");
+  bar.classList.toggle("open",o);$("#tbList").setAttribute("aria-expanded",String(o));
+  if(o&&focusSearch)setTimeout(()=>$("#q").focus(),30);
+}
+$("#tbList").addEventListener("click",()=>toggleSheet());
+$("#tbTitle").addEventListener("click",()=>toggleSheet());
+$("#tbSearch").addEventListener("click",()=>toggleSheet(true,true));
+document.addEventListener("click",e=>{if($("#bar").classList.contains("open")&&!e.target.closest("#bar,#topbar,.plist,.results"))toggleSheet(false)});
+function currentView(){return document.querySelector(".view.on")?.dataset.view||"vreme"}
+function showView(v){
+  document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on",x.dataset.view===v));
+  document.querySelectorAll("#bnav [data-go]").forEach(b=>{if(b.dataset.go===v)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+  store.setLocal("ap.view",v);window.scrollTo(0,0);
+  if(v==="okolina")renderNear();
+  if(v==="agro"&&state.time.length){renderChart();if(hist.seen)loadHist()}
+}
+$("#bnav").addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(b)showView(b.dataset.go)});
+/* okolina: 8 tačaka na 8 km + sve parcele po udaljenosti */
+const near={key:null,data:null,at:0};
+function distKm(a,b){const R=6371,dLa=(b.lat-a.lat)*Math.PI/180,dLo=(b.lon-a.lon)*Math.PI/180;const x=Math.sin(dLa/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
+async function renderNear(){
+  const c=state.loc,R=8,dl=R/111,dn=R/(111*Math.cos(c.lat*Math.PI/180));
+  const ring=[["SZ",1,-1],["S",1,0],["SI",1,1],["Z",0,-1],["",0,0],["I",0,1],["JZ",-1,-1],["J",-1,0],["JI",-1,1]].map(([d,a,b])=>({dir:d,lat:c.lat+a*dl*(a&&b?0.7071:1),lon:c.lon+b*dn*(a&&b?0.7071:1),mid:!a&&!b}));
+  const parcels=state.saved.map(p=>({...p,km:distKm(c,p)})).sort((a,b)=>a.km-b.km);
+  const pts=[...ring,...parcels];
+  const key=pts.map(p=>p.lat.toFixed(3)+","+p.lon.toFixed(3)).join(";");
+  if(near.key!==key||Date.now()-near.at>15*60*1000){
+    $("#compass").innerHTML='<div class="loading" style="grid-column:1/-1">Učitavam…</div>';$("#nearList").innerHTML="";
+    try{
+      const u=`https://api.open-meteo.com/v1/forecast?latitude=${pts.map(p=>p.lat.toFixed(4)).join(",")}&longitude=${pts.map(p=>p.lon.toFixed(4)).join(",")}&current=temperature_2m,weather_code,is_day&hourly=soil_temperature_6cm&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&forecast_days=1&timezone=auto`;
+      let j=await getJSON(u);if(!Array.isArray(j))j=[j];
+      near.key=key;near.at=Date.now();near.data=j;
+    }catch(e){$("#compass").innerHTML='<div class="err-box" style="grid-column:1/-1">Okolina nije učitana: '+esc(e.message)+'</div>';return}
+  }
+  const J=near.data;
+  const val=k=>{const o=J[k];if(!o)return{};const cur=o.current||{};const ht=o.hourly?.time||[],hi=ht.indexOf((cur.time||"").slice(0,13)+":00");return{T:cur.temperature_2m,C:cur.weather_code,N:cur.is_day===0,mx:o.daily?.temperature_2m_max?.[0],mn:o.daily?.temperature_2m_min?.[0],p:o.daily?.precipitation_sum?.[0],s6:hi>=0?o.hourly.soil_temperature_6cm?.[hi]:null}};
+  $("#compass").innerHTML=ring.map((r,k)=>{const v=val(k);return `<button type="button" class="cp ${r.mid?"mid":""}" data-ri="${k}" title="${r.mid?esc(c.name):r.dir+" "+R+" km"}"><span class="dir">${r.mid?"●":r.dir}</span>${icon(v.C,v.N)}<span class="v num">${v.T==null?"–":Math.round(v.T)+"°"}</span><span class="hl2 num">${r0(v.mx)}° / ${r0(v.mn)}°</span><span class="r num">${(v.p||0)>=0.1?r1(v.p)+" mm":""}</span></button>`}).join("");
+  $("#nearList").innerHTML=parcels.map((p,k)=>{const v=val(ring.length+k);const cur=p.km<0.05;return `<button type="button" class="nl ${cur?"cur":""}" data-pi="${k}">${icon(v.C,v.N)}<span class="n">${esc(p.name)}</span><span class="v num">${v.T==null?"–":Math.round(v.T)+"°"}</span><span class="row2 num"><span class="km">${cur?"●":r0(p.km)+" km"}</span><span>${r0(v.mx)}°/${r0(v.mn)}°</span>${(v.p||0)>=0.1?`<span class="rn">${r1(v.p)} mm</span>`:""}${v.s6!=null?`<span class="so">${r0(v.s6)}°</span>`:""}</span></button>`}).join("");
+  near.ring=ring;near.parcels=parcels;
+}
+$("#compass").addEventListener("click",e=>{const b=e.target.closest("[data-ri]");if(!b)return;const r=near.ring[+b.dataset.ri];if(r.mid){showView("vreme");return}
+  setLoc({name:`${state.loc.name} ${r.dir} 8 km`,sub:"okolina",lat:+r.lat.toFixed(4),lon:+r.lon.toFixed(4)});showView("vreme")});
+$("#nearList").addEventListener("click",e=>{const b=e.target.closest("[data-pi]");if(!b)return;setLoc(near.parcels[+b.dataset.pi]);showView("vreme")});
+
 /* ---------- locations ---------- */
 const quickN=()=>innerWidth<600?3:5;
 function renderSaved(){
@@ -1678,7 +1901,7 @@ $("#plist").addEventListener("click",e=>{
 document.addEventListener("click",e=>{if(!$("#plist").hidden&&!e.target.closest("#pwrap"))togglePlist(false)});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#plist").hidden){togglePlist(false);$("#pAll").focus()}});
 let rsT,lastNarrow=innerWidth<600;addEventListener("resize",()=>{clearTimeout(rsT);rsT=setTimeout(()=>{renderSaved();const n=innerWidth<600;if(n!==lastNarrow&&state.time.length){lastNarrow=n;renderMatrix()}},150)});
-function setLoc(l){state.loc=l;store.set("ap.loc",l);renderMini();accReset();hist.key=null;hist.cur=null;setTimeout(()=>loadHist(),50);$("#results").hidden=true;$("#q").value="";renderSaved();load()}
+function setLoc(l){toggleSheet(false);state.loc=l;store.set("ap.loc",l);renderMini();accReset();hist.key=null;hist.cur=null;setTimeout(()=>loadHist(),50);$("#results").hidden=true;$("#q").value="";renderSaved();load()}
 $("#saved").addEventListener("click",e=>{
   const b=e.target.closest("[data-k]");if(b)setLoc(state.saved[+b.dataset.k]);
 });
@@ -1809,7 +2032,8 @@ function migrateTeam(){
   migrateTeam();migrateTeam2();
   const hadLoc=(()=>{try{return !!localStorage.getItem("ap.loc")}catch(e){return false}})();
   if(!hadLoc){const l=await idb.get("ap.loc");if(l&&typeof l.lat==="number")state.loc=l;else if(state.saved[0])state.loc=state.saved[0]}
-  renderSaved();
+  renderSaved();renderTopbar();
+  {const v=store.get("ap.view","vreme");if(v!=="vreme")showView(v)}
   load();
   initCloud();
 })();
