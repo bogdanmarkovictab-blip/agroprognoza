@@ -441,11 +441,37 @@ body{padding-top:calc(58px + env(safe-area-inset-top,0px));padding-bottom:calc(7
 .sky .nav{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:56px;border:0;border-radius:12px;background:rgba(255,255,255,.14);color:#fff;font-size:22px;display:none}
 .sky .nav.l{left:8px} .sky .nav.r{right:8px}
 @media (hover:hover){.sky:hover .nav{display:block}}
-.sky.rain::after,.sky.storm::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(105deg,transparent 0 14px,rgba(255,255,255,.18) 14px 15px);background-size:200% 200%;animation:rainfall .9s linear infinite;pointer-events:none}
-.sky.snow::after{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.85) 1.4px,transparent 1.6px);background-size:26px 26px;animation:snowfall 4s linear infinite;pointer-events:none}
-@keyframes rainfall{to{background-position:-40px 120px}}
-@keyframes snowfall{to{background-position:20px 120px}}
-@media (prefers-reduced-motion:reduce){.sky::after{animation:none!important}}
+/* živa scena: nebo (sunce, mesec, zvezde, oblaci, kiša, sneg, munje, magla) i pejzaž sa voćnjakom */
+.sky .atmo{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.sky .orb{position:absolute;right:6px;top:4px;width:156px;height:156px}
+.sky .orb .rays{transform-box:view-box;transform-origin:60px 60px;animation:apSpin 50s linear infinite}
+.sky .orb .glow{transform-box:view-box;transform-origin:60px 60px;animation:apPulse 6s ease-in-out infinite}
+.sky .st{position:absolute;border-radius:50%;background:#fff;animation:apTwinkle 3s ease-in-out infinite}
+.sky .cl{position:absolute;left:0;width:100%;animation:apDrift 70s linear infinite}
+.sky .cl svg{display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,.08))}
+.sky .rd{position:absolute;top:-30px;width:1.6px;height:20px;border-radius:1px;background:linear-gradient(rgba(255,255,255,0),rgba(255,255,255,.75));animation:apRain .8s linear infinite}
+.sky .sf{position:absolute;top:-12px;border-radius:50%;background:#fff;animation:apSnow 7s linear infinite}
+.sky .flash{position:absolute;inset:0;background:#fff;opacity:0;animation:apFlash 8s infinite}
+.sky .bolt{position:absolute;left:34%;top:6%;width:46px;opacity:0;animation:apFlash 8s infinite;filter:drop-shadow(0 0 10px rgba(255,240,170,.9))}
+.sky .fg{position:absolute;left:-15%;width:130%;height:18%;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.4) 30%,rgba(255,255,255,.4) 70%,rgba(255,255,255,0));filter:blur(8px);animation:apFog 16s ease-in-out infinite}
+.sky .land{position:absolute;left:0;right:0;bottom:0;height:46%;pointer-events:none}
+.sky .land .scene{position:absolute;inset:0;width:100%;height:100%}
+.sky .orch{position:absolute;left:0;right:0;bottom:30%;height:36px;background-repeat:repeat-x;background-size:44px 36px;background-position:bottom left}
+.sky .orch.b{bottom:46%;height:24px;background-size:30px 24px;opacity:.75;background-position:bottom left 15px}
+.sky .grass{position:absolute;left:-4px;right:-4px;bottom:-2px;height:24px;background-repeat:repeat-x;background-size:26px 24px;transform-origin:50% 100%;animation:apSway 5s ease-in-out infinite}
+.sky .dots{position:relative;display:flex;gap:6px;margin-top:10px;align-items:center;font-size:12px;text-shadow:0 1px 4px rgba(0,0,0,.3)}
+.sky .dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.45)}
+.sky .dots i.on{background:#fff;width:18px;border-radius:4px}
+@keyframes apSpin{to{transform:rotate(360deg)}}
+@keyframes apPulse{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:.9;transform:scale(1.07)}}
+@keyframes apTwinkle{0%,100%{opacity:.25}50%{opacity:1}}
+@keyframes apDrift{from{transform:translateX(-240px)}to{transform:translateX(100%)}}
+@keyframes apRain{from{transform:translate(0,0) rotate(12deg)}to{transform:translate(-90px,440px) rotate(12deg)}}
+@keyframes apSnow{0%{transform:translate(0,0)}50%{transform:translate(16px,220px)}100%{transform:translate(-8px,440px)}}
+@keyframes apFlash{0%,90%,100%{opacity:0}91%{opacity:.85}92.5%{opacity:.1}94%{opacity:.6}96%{opacity:0}}
+@keyframes apFog{0%,100%{transform:translateX(-30px)}50%{transform:translateX(30px)}}
+@keyframes apSway{0%,100%{transform:skewX(-4deg)}50%{transform:skewX(4deg)}}
+@media (prefers-reduced-motion:reduce){.sky .atmo *,.sky .land *,.sky .orb *{animation:none!important}.sky .rd,.sky .sf{display:none}}
 .sky.swipe-l{animation:swl .25s ease} .sky.swipe-r{animation:swr .25s ease}
 @keyframes swl{from{transform:translateX(30px);opacity:.4}} @keyframes swr{from{transform:translateX(-30px);opacity:.4}}
 /* ikonice ispod neba */
@@ -1772,14 +1798,66 @@ seg("#accDays",v=>{acc.days=+v;if(acc.data){acc.data=null;accRun()}});
 const SKYC={clear:["#3d8fe6","#9fd0ff"],partly:["#4f8fcf","#b4d3ec"],cloudy:["#6f7f8f","#b3bdc7"],rain:["#46566a","#8693a2"],storm:["#2b3340","#58616f"],snow:["#8fa8bf","#dde8f1"],fog:["#9aa4ad","#d3d8dc"],
   nclear:["#0b1736","#2a4a86"],npartly:["#14213d","#3b5277"],ncloudy:["#1b2430","#3a4553"],nrain:["#151c26","#36414f"],nstorm:["#10141b","#2c333d"],nsnow:["#3b4c61","#7b8ea3"],nfog:["#2a3138","#59626b"]};
 function skyKind(c){if(c==null)return"cloudy";if(c===0||c===1)return"clear";if(c===2)return"partly";if(c===3)return"cloudy";if(c===45||c===48)return"fog";if(c>=95)return"storm";if((c>=71&&c<=77)||c>=85)return"snow";if(c>=51)return"rain";return"cloudy"}
+/* sezona po mesecu (za voćnjak u pejzažu) */
+function season(){const m=+localToday().slice(5,7);return m===3||m===4?"bloom":m>=5&&m<=8?"summer":m>=9&&m<=11?"autumn":"winter"}
+const svgUrl=x=>'url("data:image/svg+xml,'+encodeURIComponent(x)+'")';
+function treeSvg(w,h,night,snow,sea){
+  const trunk=night?"#1b1410":"#5b4331";
+  let crown;
+  if(sea==="winter"&&!snow)crown=`<path d="M20 22 L20 12 M20 16 L14 9 M20 15 L26 8 M20 19 L12 14 M20 18 L28 13" stroke="${trunk}" stroke-width="1.6" stroke-linecap="round" fill="none"/>`;
+  else{
+    const C={bloom:["#7fae5f",["#ffffff","#f7c9d9"]],summer:["#4f8f3e",["#3c7a2e","#c23b3b"]],autumn:["#8e9a3c",["#e08a2c","#efc23a"]],winter:["#56724f",["#56724f"]]}[sea];
+    let base=night?"#1f3526":C[0];let dots=night?["#2a4632"]:C[1];
+    const pts=[[14,13],[25,11],[19,8],[27,17],[12,18],[21,15],[17,19]];
+    crown=`<ellipse cx="20" cy="14" rx="11.5" ry="10.5" fill="${base}"/><ellipse cx="17" cy="11" rx="6" ry="4.5" fill="#fff" opacity="${night?0.04:0.12}"/>`+pts.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="1.3" fill="${dots[i%dots.length]}"/>`).join("");
+    if(snow)crown+=`<path d="M9 12 Q20 1 31 12 Q26 8 20 9 Q14 8 9 12z" fill="#fff"/>`;
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 34" width="${w}" height="${h}"><ellipse cx="20" cy="33" rx="9" ry="1.6" fill="#000" opacity=".12"/><rect x="18.8" y="19" width="2.6" height="14" rx="1" fill="${trunk}"/>${crown}</svg>`;
+}
+function grassSvg(col,snow){
+  if(snow)return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 24"><path d="M0 24 Q6 14 13 18 Q19 13 26 20 V24z" fill="#ffffff"/></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 24"><g fill="none" stroke="${col}" stroke-width="1.6" stroke-linecap="round"><path d="M3 24 Q4 15 2 9"/><path d="M7 24 Q8 14 11 7"/><path d="M12 24 Q12 16 9 12"/><path d="M16 24 Q17 13 20 5"/><path d="M21 24 Q21 17 24 12"/></g></svg>`;
+}
 function scene(kind,night){
-  const pal=kind==="snow"?["#e9f0f6","#d8e3ec","#c9d7e3"]:night?["#1d3527","#16291e","#102017"]:(kind==="rain"||kind==="storm"||kind==="fog"||kind==="cloudy")?["#6e9663","#5a8550","#4a7442"]:["#86c06f","#6aab55","#559843"];
-  const rows=Array.from({length:9},(_,k)=>{const x=-40+k*60;return `<path d="M${x} 140 Q${x+70} 108 ${x+150} 96" stroke="${night?"#0c1912":"rgba(0,0,0,.12)"}" stroke-width="2" fill="none"/>`}).join("");
-  return `<svg class="scene" viewBox="0 0 400 140" preserveAspectRatio="none" aria-hidden="true">
-    <path d="M0 70 Q60 40 130 58 T260 50 T400 62 V140 H0z" fill="${pal[0]}"/>
-    <path d="M0 92 Q90 66 190 84 T400 80 V140 H0z" fill="${pal[1]}"/>
-    <path d="M0 112 Q120 92 240 104 T400 98 V140 H0z" fill="${pal[2]}"/>${rows}
-  </svg>`;
+  const snow=kind==="snow",dull=kind==="rain"||kind==="storm"||kind==="fog"||kind==="cloudy",sea=season();
+  const autumnTint=sea==="autumn"&&!night&&!snow;
+  const pal=snow?["#e9f0f6","#d8e3ec","#c9d7e3"]:night?["#1d3527","#16291e","#102017"]:dull?["#6e9663","#5a8550","#4a7442"]:autumnTint?["#93b062","#78a24f","#62903f"]:["#86c06f","#6aab55","#559843"];
+  const far=snow?"#c4d3e0":night?"#16202c":dull?"#7f919c":"#86a9c2";
+  const caps=snow?`<path d="M104 41 L110 38 L117 43 Z M264 39 L270 36 L277 41 Z M184 47 L190 44 L196 48 Z" fill="#fff"/>`:"";
+  const rows=Array.from({length:9},(_,k)=>{const x=-40+k*60;return `<path d="M${x} 140 Q${x+70} 112 ${x+150} 102" stroke="${night?"#0c1912":"rgba(0,0,0,.10)"}" stroke-width="2" fill="none"/>`}).join("");
+  const grassCol=snow?"#fff":night?"#0f2416":dull?"#3f6a38":"#3f8a37";
+  return `<div class="land" aria-hidden="true"><svg class="scene" viewBox="0 0 400 140" preserveAspectRatio="none">
+    <path d="M0 56 L40 46 L70 52 L110 36 L150 50 L190 42 L230 52 L270 34 L310 48 L350 40 L400 50 V140 H0z" fill="${far}" opacity=".85"/>${caps}
+    <path d="M0 74 Q60 50 130 64 T260 58 T400 68 V140 H0z" fill="${pal[0]}"/>
+    <path d="M0 94 Q90 72 190 88 T400 84 V140 H0z" fill="${pal[1]}"/>
+    <path d="M0 114 Q120 96 240 106 T400 100 V140 H0z" fill="${pal[2]}"/>${rows}
+  </svg>
+  <div class="orch b" style='background-image:${svgUrl(treeSvg(30,24,night,snow,sea))}'></div>
+  <div class="orch" style='background-image:${svgUrl(treeSvg(44,36,night,snow,sea))}'></div>
+  <div class="grass" style='background-image:${svgUrl(grassSvg(grassCol,snow))}${snow?";animation:none":""}'></div></div>`;
+}
+const SUN_SVG=`<svg viewBox="0 0 120 120" class="orb" aria-hidden="true"><defs><radialGradient id="apSunCore" cx="45%" cy="40%"><stop offset="0" stop-color="#fffbe0"/><stop offset=".55" stop-color="#ffd84a"/><stop offset="1" stop-color="#ffae1a"/></radialGradient><radialGradient id="apSunGlow"><stop offset=".35" stop-color="#ffe9a0" stop-opacity=".75"/><stop offset="1" stop-color="#ffe9a0" stop-opacity="0"/></radialGradient></defs>
+  <circle class="glow" cx="60" cy="60" r="58" fill="url(#apSunGlow)"/>
+  <g class="rays" stroke="#ffe27a" stroke-width="3.2" stroke-linecap="round">${Array.from({length:12},(_,k)=>{const a=k*Math.PI/6,r1=k%2?36:34,r2=k%2?44:49;return `<line x1="${(60+Math.cos(a)*r1).toFixed(1)}" y1="${(60+Math.sin(a)*r1).toFixed(1)}" x2="${(60+Math.cos(a)*r2).toFixed(1)}" y2="${(60+Math.sin(a)*r2).toFixed(1)}"/>`}).join("")}</g>
+  <circle cx="60" cy="60" r="26" fill="url(#apSunCore)"/></svg>`;
+const MOON_SVG=`<svg viewBox="0 0 120 120" class="orb" aria-hidden="true"><defs><radialGradient id="apMoonGlow"><stop offset=".3" stop-color="#dfe6ff" stop-opacity=".45"/><stop offset="1" stop-color="#dfe6ff" stop-opacity="0"/></radialGradient></defs>
+  <circle class="glow" cx="60" cy="60" r="56" fill="url(#apMoonGlow)"/>
+  <circle cx="60" cy="60" r="24" fill="#f3f1e4"/><circle cx="52" cy="54" r="5" fill="#dcd8c3"/><circle cx="67" cy="66" r="3.6" fill="#dcd8c3"/><circle cx="64" cy="50" r="2.2" fill="#dcd8c3"/><circle cx="51" cy="68" r="2.6" fill="#dcd8c3"/></svg>`;
+const CLOUD_PATH="M20 45 Q4 45 6 32 Q8 21 22 22 Q26 8 44 9 Q58 0 72 12 Q90 6 96 24 Q116 24 114 38 Q112 46 100 45 Z";
+function atmo(kind,night){
+  let seed=11;const R=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  let h="";
+  if(night&&(kind==="clear"||kind==="partly"))for(let k=0;k<34;k++){const z=(1+R()*1.8).toFixed(1);h+=`<i class="st" style="left:${(R()*100).toFixed(1)}%;top:${(R()*52).toFixed(1)}%;width:${z}px;height:${z}px;animation-delay:-${(R()*4).toFixed(1)}s;animation-duration:${(2.5+R()*3).toFixed(1)}s"></i>`}
+  if(kind==="clear"||kind==="partly")h+=night?MOON_SVG:SUN_SVG;
+  const nC={clear:0,partly:3,cloudy:5,rain:5,storm:5,snow:4,fog:2}[kind]||0;
+  const cc=night?(kind==="storm"||kind==="rain"?["#2f3743","#3a4350"]:["#4d5867","#5e6a7a"]):kind==="storm"?["#59636f","#6c7682"]:kind==="rain"?["#8d99a6","#a3aeba"]:kind==="cloudy"||kind==="fog"?["#c9d2db","#dde4ea"]:["#ffffff","#f3f7fb"];
+  for(let k=0;k<nC;k++){const w=Math.round((kind==="partly"?110:150)+R()*110),top=(kind==="partly"?4:-4)+k*(kind==="partly"?14:9)+R()*6;
+    h+=`<div class="cl" style="top:${top.toFixed(0)}%;animation-duration:${(55+R()*45).toFixed(0)}s;animation-delay:-${(R()*90).toFixed(0)}s;opacity:${(0.82+R()*0.18).toFixed(2)}"><svg viewBox="0 0 120 50" width="${w}" height="${Math.round(w*50/120)}"><path d="${CLOUD_PATH}" fill="${cc[k%2]}"/></svg></div>`}
+  if(kind==="rain"||kind==="storm")for(let k=0;k<70;k++)h+=`<i class="rd" style="left:${(R()*120).toFixed(1)}%;animation-duration:${(0.6+R()*0.4).toFixed(2)}s;animation-delay:-${(R()*1).toFixed(2)}s;opacity:${(0.4+R()*0.6).toFixed(2)}"></i>`;
+  if(kind==="snow")for(let k=0;k<55;k++){const z=(2.5+R()*4).toFixed(1);h+=`<i class="sf" style="left:${(R()*100).toFixed(1)}%;width:${z}px;height:${z}px;animation-duration:${(5+R()*5).toFixed(1)}s;animation-delay:-${(R()*9).toFixed(1)}s;opacity:${(0.6+R()*0.4).toFixed(2)}"></i>`}
+  if(kind==="storm")h+=`<div class="flash"></div><svg class="bolt" viewBox="0 0 40 80"><path d="M24 0 L6 44 L18 44 L10 80 L36 30 L22 30 L32 0Z" fill="#fff3b0"/></svg>`;
+  if(kind==="fog")for(let k=0;k<4;k++)h+=`<div class="fg" style="top:${30+k*15}%;animation-duration:${(12+k*4)}s;animation-delay:-${k*3}s"></div>`;
+  return `<div class="atmo" aria-hidden="true">${h}</div>`;
 }
 function isNight(i){const d=series(activeModels()[0]?.id,"is_day");if(d&&d[i]!=null)return d[i]===0;const h=hourOf(state.time[i]||"T12");return h<6||h>=20}
 function renderTopbar(){
@@ -1800,10 +1878,12 @@ function renderSky(){
   const sky=$("#sky");
   sky.className="sky "+kind;
   sky.style.setProperty("--s1",col[0]);sky.style.setProperty("--s2",col[1]);
-  sky.innerHTML=`${scene(kind,night)}${icon(code,night).replace("<svg","<svg class='bigic'")}
+  const nS=state.saved.length,pos=state.saved.indexOf(state.loc)>=0?state.saved.indexOf(state.loc):state.saved.findIndex(p=>sameLoc(p,state.loc));
+  const dots=nS>1&&pos>=0?`<div class="dots" aria-label="Parcela ${pos+1} od ${nS}">${nS<=12?state.saved.map((_,k)=>`<i class="${k===pos?"on":""}"></i>`).join(""):`<span>${pos+1} / ${nS}</span>`}<span style="margin-left:6px">${esc(state.saved[pos].name)}</span></div>`:"";
+  sky.innerHTML=`${atmo(kind,night)}${scene(kind,night)}
     <div class="t num">${T==null?"–":Math.round(T)+"°"}</div>
     <div class="c">${CODE_TXT(code)||""}</div>
-    <div class="hl num"><span>↑ ${r0(today.tmax)}°</span><span>↓ ${r0(today.tmin)}°</span>${(today.p||0)>=0.2?`<span>💧 ${r1(today.p)} mm</span>`:""}</div>
+    <div class="hl num"><span>↑ ${r0(today.tmax)}°</span><span>↓ ${r0(today.tmin)}°</span>${(today.p||0)>=0.2?`<span>💧 ${r1(today.p)} mm</span>`:""}</div>${dots}
     ${state.saved.length>1?`<button type="button" class="nav l" data-sw="-1" aria-label="Prethodna parcela">‹</button><button type="button" class="nav r" data-sw="1" aria-label="Sledeća parcela">›</button>`:""}`;
   renderTiles();
 }
@@ -1947,7 +2027,8 @@ $("#qtiles").addEventListener("click",e=>{
 /* prevlačenje prstom između parcela */
 function swipeLoc(dir){
   const n=state.saved.length;if(n<2)return;
-  let k=state.saved.findIndex(p=>Math.abs(p.lat-state.loc.lat)<1e-4&&Math.abs(p.lon-state.loc.lon)<1e-4);
+  let k=state.saved.indexOf(state.loc);
+  if(k<0)k=state.saved.findIndex(p=>Math.abs(p.lat-state.loc.lat)<1e-4&&Math.abs(p.lon-state.loc.lon)<1e-4);
   k=k<0?0:(k+dir+n)%n;
   const sky=$("#sky");sky.classList.remove("swipe-l","swipe-r");void sky.offsetWidth;sky.classList.add(dir>0?"swipe-l":"swipe-r");
   setLoc(state.saved[k]);
@@ -2138,6 +2219,13 @@ $("#mgr").addEventListener("click",async e=>{
   }
 });
 
+/* duplikat = isto ime i iste GPS koordinate (razlika do ~50 m); zadržava se prva */
+function dedupeParcels(arr){
+  const norm=x=>String(x||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  const out=[];
+  arr.forEach(p=>{if(!out.some(q=>norm(q.name)===norm(p.name)&&Math.abs(q.lat-p.lat)<5e-4&&Math.abs(q.lon-p.lon)<5e-4))out.push(p)});
+  return out;
+}
 /* start: ako je localStorage prazan, vrati parcele iz rezervne kopije */
 /* Početne lokacije tima (dodaju se jednom, ne dupliraju se, ne brišu ništa postojeće) */
 const TEAM_PARCELS=[
@@ -2172,6 +2260,8 @@ function migrateTeam(){
   if(!state.saved.length){const b=await idb.get("ap.saved");if(Array.isArray(b)&&b.length){state.saved=b;try{localStorage.setItem("ap.saved",JSON.stringify(b))}catch(e){}}}
   else idb.put("ap.saved",state.saved);
   migrateTeam();migrateTeam2();
+  {const d=dedupeParcels(state.saved);if(d.length!==state.saved.length){state.saved=d;store.setLocal("ap.saved",d)}}
+  {const m=state.saved.find(p=>Math.abs(p.lat-state.loc.lat)<1e-4&&Math.abs(p.lon-state.loc.lon)<1e-4&&p.name===state.loc.name);if(m)state.loc=m}
   const hadLoc=(()=>{try{return !!localStorage.getItem("ap.loc")}catch(e){return false}})();
   if(!hadLoc){const l=await idb.get("ap.loc");if(l&&typeof l.lat==="number")state.loc=l;else if(state.saved[0])state.loc=state.saved[0]}
   renderSaved();renderTopbar();
@@ -2197,7 +2287,7 @@ async function initCloud(){
   }catch(e){cloud.msg="Prijava trenutno nije dostupna (nema interneta?).";renderAuth()}
 }
 const sameLoc=(a,b)=>Math.abs(a.lat-b.lat)<1e-4&&Math.abs(a.lon-b.lon)<1e-4;
-function cleanParcels(arr){return(Array.isArray(arr)?arr:[]).filter(p=>p&&isFinite(p.lat)&&isFinite(p.lon)).map(p=>({name:String(p.name||"Parcela").slice(0,60),sub:String(p.sub||"").slice(0,80),lat:+p.lat,lon:+p.lon}))}
+function cleanParcels(arr){return dedupeParcels((Array.isArray(arr)?arr:[]).filter(p=>p&&isFinite(p.lat)&&isFinite(p.lon)).map(p=>({name:String(p.name||"Parcela").slice(0,60),sub:String(p.sub||"").slice(0,80),lat:+p.lat,lon:+p.lon})))}
 function applySaved(arr){
   state.saved=cleanParcels(arr);store.setLocal("ap.saved",state.saved);renderSaved();
   if(!$("#mgr").hidden)renderMgr();
