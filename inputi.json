@@ -1,0 +1,26 @@
+{
+  "verzija": 1,
+  "opis": "Baza inputa za deo Prskanje. pod = tačka delikvescencije (relativna vlažnost u %, na 20–25 °C) iznad koje so na listu ostaje rastvorena. Inputi bez pod vrednosti (okvašivači, mikrobiologija) ne menjaju proračun dok im se ne doda pravilo.",
+  "kategorije": [
+    { "id": "so", "naziv": "Soli i đubriva" },
+    { "id": "okvasivac", "naziv": "Okvašivači i humektanti" },
+    { "id": "mikrobiologija", "naziv": "Mikrobiologija" },
+    { "id": "zastita", "naziv": "Zaštita" }
+  ],
+  "inputi": [
+    { "id": "cacl2", "naziv": "Kalcijum-hlorid", "formula": "CaCl₂", "kategorija": "so", "pod": 33 },
+    { "id": "mgcl2", "naziv": "Magnezijum-hlorid", "formula": "MgCl₂", "kategorija": "so", "pod": 33 },
+    { "id": "k2co3", "naziv": "Kalijum-karbonat", "formula": "K₂CO₃", "kategorija": "so", "pod": 43 },
+    { "id": "cano3", "naziv": "Kalcijum-nitrat", "formula": "Ca(NO₃)₂", "kategorija": "so", "pod": 50 },
+    { "id": "mgno3", "naziv": "Magnezijum-nitrat", "formula": "Mg(NO₃)₂", "kategorija": "so", "pod": 53 },
+    { "id": "nh4no3", "naziv": "Amonijum-nitrat", "formula": "NH₄NO₃", "kategorija": "so", "pod": 62 },
+    { "id": "urea", "naziv": "Urea", "formula": "CO(NH₂)₂", "kategorija": "so", "pod": 73 },
+    { "id": "ams", "naziv": "Amonijum-sulfat", "formula": "(NH₄)₂SO₄", "kategorija": "so", "pod": 80 },
+    { "id": "kcl", "naziv": "Kalijum-hlorid", "formula": "KCl", "kategorija": "so", "pod": 85 },
+    { "id": "mgso4", "naziv": "Magnezijum-sulfat", "formula": "MgSO₄", "kategorija": "so", "pod": 90 },
+    { "id": "kno3", "naziv": "Kalijum-nitrat", "formula": "KNO₃", "kategorija": "so", "pod": 93 },
+    { "id": "mkp", "naziv": "Monokalijum-fosfat", "formula": "KH₂PO₄", "kategorija": "so", "pod": 95 },
+    { "id": "k2so4", "naziv": "Kalijum-sulfat", "formula": "K₂SO₄", "kategorija": "so", "pod": 97 }
+  ],
+  "mesavine": []
+}

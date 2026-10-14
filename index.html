@@ -710,14 +710,17 @@ body{padding-top:calc(58px + env(safe-area-inset-top,0px));padding-bottom:calc(7
   <p class="note src-note">Podaci: Open-Meteo.com (CC BY 4.0), sirovi izlazi nacionalnih meteoroloških servisa. Google i Frog Weather nemaju javno dostupne podatke pa ne mogu biti ovde. Ovo je pomoćni alat; za odluke o tretmanima uvek pogledaj i stanje na parceli.</p>
 </section>
 </div><!-- /vAgro -->
+<div class="view" id="vPrskanje" data-view="prskanje"></div>
 
 </div>
 <nav class="bnav" id="bnav" aria-label="Prikaz">
   <button type="button" data-go="vreme" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="3.5" fill="currentColor"/><path d="M8 19h9a3.5 3.5 0 0 0 .2-7 4.6 4.6 0 0 0-8.8 1.2A2.9 2.9 0 0 0 8 19z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>Vreme</span></button>
   <button type="button" data-go="okolina"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="2.3" fill="currentColor"/></svg><span>Lokacije</span></button>
   <button type="button" data-go="agro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V10M12 13c-3.5 0-6-2.2-6-6 3.5 0 6 2.2 6 6zm0-2c0-3.4 2.3-6 6-6 0 3.8-2.5 6-6 6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Agro</span></button>
+  <button type="button" data-go="prskanje"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5s-5.5 6.2-5.5 10.2a5.5 5.5 0 0 0 11 0C17.5 9.7 12 3.5 12 3.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.2 14.2a2.9 2.9 0 0 0 2.6 2.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Prskanje</span></button>
 </nav>
 
+<script src="prskanje.js"></script>
 <script>
 "use strict";
 const MODELS=[
@@ -922,6 +925,7 @@ function dailyFor(get){ // get(key)->array
 /* ---------- render ---------- */
 function renderAll(){
   renderSaved();renderNow();renderSpray();renderSky();renderHourly();renderTen();renderMatrix();renderToggles();renderChart();renderSpray();renderSoil();renderAlerts();renderSources();
+  if(window.Prskanje)Prskanje.render();
 }
 function renderNowSkeleton(){
   $("#now").innerHTML=`<div class="eyebrow">Lokacija</div><h1>${esc(state.loc.name)}</h1><div class="coords num">${state.loc.lat.toFixed(4)}, ${state.loc.lon.toFixed(4)}</div><div class="skel" style="width:50%;height:56px;margin-top:8px"></div><div class="skel" style="width:70%"></div>`;
@@ -1834,6 +1838,7 @@ function showView(v){
   store.setLocal("ap.view",v);window.scrollTo(0,0);
   if(v==="okolina")renderNear();
   if(v==="agro"&&state.time.length){renderChart();if(hist.seen)loadHist()}
+  if(v==="prskanje"&&window.Prskanje)Prskanje.onShow();
 }
 $("#bnav").addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(b)showView(b.dataset.go)});
 /* okolina: 8 tačaka na 8 km + sve parcele po udaljenosti */
