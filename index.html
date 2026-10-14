@@ -455,6 +455,23 @@ body{padding-top:calc(58px + env(safe-area-inset-top,0px));padding-bottom:calc(7
 .qt .v{font-family:var(--display);font-size:24px;font-weight:600;line-height:1;white-space:nowrap}
 .qt .s{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 @media (max-width:700px){.qtiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+button.qt{font:inherit;color:inherit;cursor:pointer}
+button.qt:hover{border-color:var(--line-2)}
+button.qt[aria-expanded="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.qdet{scroll-margin-top:calc(var(--stick-top,0px) + 12px)}
+.qdet .qd-sum{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink-2)}
+.qdet .qd-sum b{color:var(--ink);font-variant-numeric:tabular-nums}
+.qdet .qd-chart{position:relative;height:220px}
+.qdet .qd-hrs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.qdet .qd-grid{display:grid;grid-template-columns:repeat(24,minmax(46px,1fr));min-width:100%;font-variant-numeric:tabular-nums;font-size:12px;text-align:center}
+.qdet .qd-grid>div{display:flex;flex-direction:column;gap:3px;padding:6px 0;border-left:1px solid var(--line)}
+.qdet .qd-grid>div:first-child{border-left:0}
+.qdet .qd-grid .h{color:var(--muted);font-size:11px}
+.qdet .qd-grid .a{font-weight:600;color:var(--ink)}
+.qdet .qd-grid .b{color:var(--ink-2)}
+.qdet .qd-grid .sp{height:16px;border-radius:3px;margin:0 4px}
+.qdet .qd-close{border:1px solid var(--line-2);background:var(--surface);border-radius:8px;height:32px;padding:0 10px;font:inherit;font-size:13px;cursor:pointer}
+.qdet .qd-why{font-size:12.5px;color:var(--ink-2);margin:0;padding-left:18px}
 /* bez objašnjenja */
 .panel-head p,.note:not(.src-note),.ten-note,.hrleg>span:not(.keep),.legend.hl-help{display:none!important}
 .view[data-view="vreme"] .eyebrow{display:none}
@@ -522,6 +539,7 @@ body{padding-top:calc(58px + env(safe-area-inset-top,0px));padding-bottom:calc(7
 <div class="view on" id="vVreme" data-view="vreme">
   <section class="sky" id="sky" aria-live="polite"><div class="loading" style="color:#fff">Učitavam…</div></section>
   <div class="qtiles" id="qtiles"></div>
+  <section class="panel qdet" id="qdet" hidden aria-live="polite"></section>
   <div class="panel hourly" id="hourlyPanel">
     <div class="panel-head" style="align-items:center">
       <div><div class="eyebrow">Po satima</div><h2 id="hrTitle">Narednih 24 h</h2></div>
@@ -1797,15 +1815,100 @@ function renderTiles(){
   const spCol=sp?{good:"var(--good)",warn:"var(--warn)",bad:"var(--bad)"}[sp.r]||"var(--muted)":"var(--muted)";
   const rm=rainM.val;
   const tiles=[
-    {ic:QI.soil,v:s6==null?"–":r1(s6)+"°",s:s0!=null?`${r0(s0)}° · ${r0(s18)}°`:"",tip:`Zemljište 6 cm${s0!=null?`, površina ${r1(s0)}°, 18 cm ${r1(s18)}°`:""}`},
-    {ic:uvIcon(uvShow),v:uvShow==null?"–":r1(uvShow),s:uvMax!=null?"max "+r1(uvMax):"",tip:"UV indeks"+(uvShow!=null?" · "+uvLvl(uvShow)[1]:"")},
-    {ic:QI.rain,v:rm?r0(rm.sum):"…",s:rm&&rm.pct!=null?rm.pct+"%":"mm",tip:"Izmerena kiša od početka meseca"+(rm&&rm.pct!=null?`, ${rm.pct}% proseka`:""),id:"tRain"},
-    {ic:windIcon(C("wind_direction_10m")),v:r0(C("wind_speed_10m")),s:"↯ "+r0(C("wind_gusts_10m")),tip:"Vetar km/h i udari"},
-    {ic:QI.hum,v:r0(C("relative_humidity_2m"))+"%",s:"",tip:"Vlažnost vazduha"},
-    {ic:QI.spray.replace('<svg','<svg style="color:'+spCol+'"'),v:`<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${spCol}"></span>`,s:w?`${w.a.t.slice(11,13)}–${String(hourOf(w.b.t)+1).padStart(2,"0")}h`:"–",tip:"Prskanje sada"+(w?`, sledeći povoljan termin ${dayLabel(w.a.t)} ${w.a.t.slice(11,16)}`:"")},
+    {ic:QI.soil,v:s6==null?"–":r1(s6)+"°",s:s0!=null?`${r0(s0)}° · ${r0(s18)}°`:"",tip:`Zemljište 6 cm${s0!=null?`, površina ${r1(s0)}°, 18 cm ${r1(s18)}°`:""}`,k:"soil"},
+    {ic:uvIcon(uvShow),v:uvShow==null?"–":r1(uvShow),s:uvMax!=null?"max "+r1(uvMax):"",tip:"UV indeks"+(uvShow!=null?" · "+uvLvl(uvShow)[1]:""),k:"uv"},
+    {ic:QI.rain,v:rm?r0(rm.sum):"…",s:rm&&rm.pct!=null?rm.pct+"%":"mm",tip:"Izmerena kiša od početka meseca"+(rm&&rm.pct!=null?`, ${rm.pct}% proseka`:""),id:"tRain",k:"rain"},
+    {ic:windIcon(C("wind_direction_10m")),v:r0(C("wind_speed_10m")),s:"↯ "+r0(C("wind_gusts_10m")),tip:"Vetar km/h i udari",k:"wind"},
+    {ic:QI.hum,v:r0(C("relative_humidity_2m"))+"%",s:"",tip:"Vlažnost vazduha",k:"hum"},
+    {ic:QI.spray.replace('<svg','<svg style="color:'+spCol+'"'),v:`<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${spCol}"></span>`,s:w?`${w.a.t.slice(11,13)}–${String(hourOf(w.b.t)+1).padStart(2,"0")}h`:"–",tip:"Prskanje sada"+(w?`, sledeći povoljan termin ${dayLabel(w.a.t)} ${w.a.t.slice(11,16)}`:""),k:"spray"},
   ];
-  $("#qtiles").innerHTML=tiles.map(x=>`<div class="qt" title="${esc(x.tip)}" ${x.id?`id="${x.id}"`:""}>${x.ic}<span class="v num">${x.v}</span><span class="s num">${x.s}</span></div>`).join("");
+  $("#qtiles").innerHTML=tiles.map(x=>`<button type="button" class="qt" data-qk="${x.k}" aria-expanded="${qd.k===x.k}" aria-controls="qdet" title="${esc(x.tip)} · dodirni za narednih 24 h" ${x.id?`id="${x.id}"`:""}>${x.ic}<span class="v num">${x.v}</span><span class="s num">${x.s}</span></button>`).join("");
+  if(qd.k)renderQDetail();
 }
+/* detalj pločice: narednih 24 h po satima (medijana uključenih modela) */
+const qd={k:null,chart:null};
+const QD_T={rain:"Kiša",wind:"Vetar",hum:"Vlažnost vazduha",spray:"Prskanje",soil:"Temperatura zemljišta",uv:"UV indeks"};
+function qdSeries(){
+  const i0=state.nowIdx,n=Math.min(24,state.time.length-i0),idx=Array.from({length:n},(_,k)=>i0+k);
+  const C=key=>{const a=consensus(key);return idx.map(i=>a[i])};
+  const A=key=>idx.map(i=>agroAt(key,state.time[i]));
+  return {idx,C,A,hrs:idx.map(i=>state.time[i].slice(11,13))};
+}
+function renderQDetail(){
+  const box=$("#qdet"),k=qd.k;
+  if(!k||!state.time.length){box.hidden=true;return}
+  const S=qdSeries(),H=S.hrs;let sum="",cols=[],ds=[],y={},type="line",extra="";
+  const ln=(label,data,c,dash)=>({type:"line",label,data,borderColor:c,backgroundColor:c,borderWidth:2,pointRadius:0,pointHitRadius:8,tension:.3,borderDash:dash||[]});
+  const bar=(label,data,c)=>({type:"bar",label,data,backgroundColor:c,borderRadius:3,maxBarThickness:18});
+  const cTxt=v=>v==null?"–":v;
+  if(k==="rain"){
+    const p=S.C("precipitation"),pop=S.C("precipitation_probability");
+    const tot=p.reduce((a,v)=>a+(v||0),0),wet=p.filter(v=>(v||0)>=0.1).length,mx=Math.max(0,...pop.filter(v=>v!=null));
+    sum=`<span>Ukupno <b>${r1(tot)} mm</b></span><span>Sati sa kišom <b>${wet}</b></span><span>Najveća verovatnoća <b>${r0(mx)}%</b></span>`;
+    ds=[bar("Kiša (mm)",p.map(v=>v||0),css("--rain"))];y={min:0,suggestedMax:2,title:"mm"};
+    cols=H.map((h,j)=>[h,(p[j]||0)<0.05?"0":r1(p[j]),pop[j]!=null?r0(pop[j])+"%":"–"]);
+    extra="Vrednosti po satu: mm kiše i verovatnoća padavina.";
+  }else if(k==="wind"){
+    const w=S.C("wind_speed_10m"),g=S.C("wind_gusts_10m"),d=S.C("wind_direction_10m");
+    sum=`<span>Najjači vetar <b>${r0(Math.max(...w.filter(v=>v!=null)))} km/h</b></span><span>Najjači udari <b>${r0(Math.max(...g.filter(v=>v!=null)))} km/h</b></span>`;
+    ds=[ln("Vetar (km/h)",w,css("--accent")),ln("Udari (km/h)",g,css("--warn"),[5,4])];y={min:0,suggestedMax:20,title:"km/h"};
+    const dirTxt=v=>v==null?"–":["S","SI","I","JI","J","JZ","Z","SZ"][Math.round(v/45)%8];
+    cols=H.map((h,j)=>[h,r0(w[j]),"↯"+r0(g[j])+" "+dirTxt(d[j])]);
+    extra="Vrednosti po satu: brzina vetra, udari i smer odakle duva.";
+  }else if(k==="hum"){
+    const rh=S.C("relative_humidity_2m"),td=S.C("dew_point_2m"),t=S.C("temperature_2m");
+    const v=rh.filter(x=>x!=null);
+    sum=`<span>Najniža <b>${r0(Math.min(...v))}%</b></span><span>Najviša <b>${r0(Math.max(...v))}%</b></span><span>Sati iznad 90% <b>${rh.filter(x=>x!=null&&x>=90).length}</b></span>`;
+    ds=[ln("Vlažnost (%)",rh,css("--rain"))];y={min:0,max:100,title:"%"};
+    cols=H.map((h,j)=>[h,r0(rh[j])+"%",td[j]!=null?"rosa "+r0(td[j])+"°":"–"]);
+    extra="Vrednosti po satu: relativna vlažnost i tačka rose. Kad se temperatura spusti do tačke rose, list se kvasi.";
+  }else if(k==="soil"){
+    const s0=S.A("soil_temperature_0cm"),s6=S.A("soil_temperature_6cm"),s18=S.A("soil_temperature_18cm");
+    if(!s6.some(v=>v!=null)){sum="<span>Podaci o zemljištu trenutno nisu dostupni.</span>"}
+    else sum=`<span>6 cm <b>${r1(Math.min(...s6.filter(v=>v!=null)))}–${r1(Math.max(...s6.filter(v=>v!=null)))} °C</b></span><span>18 cm <b>${r1(s18.find(v=>v!=null))} °C</b></span>`;
+    ds=[ln("Površina",s0,css("--warn"),[4,4]),ln("6 cm",s6,css("--soil-ink")),ln("18 cm",s18,css("--accent"))];y={title:"°C"};
+    cols=H.map((h,j)=>[h,s6[j]!=null?r1(s6[j])+"°":"–",s0[j]!=null?"pov. "+r0(s0[j])+"°":"–"]);
+    extra="Vrednosti po satu: temperatura na 6 cm i na površini. Linije: površina, 6 cm i 18 cm.";
+  }else if(k==="uv"){
+    const u=S.A("uv_index");
+    sum=`<span>Najviši UV <b>${r1(Math.max(0,...u.filter(v=>v!=null)))}</b></span>`;
+    ds=[bar("UV indeks",u.map(v=>v||0),css("--uv3"))];y={min:0,suggestedMax:6,title:"UV"};
+    cols=H.map((h,j)=>[h,u[j]!=null?r1(u[j]):"–",u[j]!=null&&u[j]>0?uvLvl(u[j])[1]:""]);
+  }else if(k==="spray"){
+    const sd=(state._spray?.sd||[]).slice(0,24),col={good:"var(--good)",warn:"var(--warn)",bad:"var(--bad)",na:"var(--line-2)"};
+    const lab={good:"povoljno",warn:"uslovno",bad:"ne",na:"–"};
+    const g=sd.filter(x=>x.r==="good").length,wn=sd.filter(x=>x.r==="warn").length;
+    const w=state._spray?.wins?.[0];
+    sum=`<span>Povoljnih sati <b>${g}</b></span><span>Uslovnih <b>${wn}</b></span><span>Sledeći dnevni prozor <b>${w?dayLabel(w.a.t)+" "+w.a.t.slice(11,16)+"–"+String(hourOf(w.b.t)+1).padStart(2,"0")+":00":"nema"}</b></span>`;
+    type="none";
+    cols=sd.map(x=>[x.t.slice(11,13),`<span class="sp" style="display:block;background:${col[x.r]}"></span>`,lab[x.r],x]);
+    const bad=sd.filter(x=>x.r!=="good"&&x.why&&x.why.length);
+    const reasons={};bad.forEach(x=>x.why.forEach(r=>{const key=r.replace(/\d+([.,]\d+)?/g,"").replace(/\s+/g," ").trim();reasons[key]=(reasons[key]||0)+1}));
+    const top=Object.entries(reasons).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    extra=top.length?"Najčešće smeta:<ul class=\"qd-why\">"+top.map(([r,n])=>`<li>${esc(bad.flatMap(x=>x.why).find(w=>w.replace(/\d+([.,]\d+)?/g,"").replace(/\s+/g," ").trim()===r))} <span style="color:var(--muted)">(${n} h)</span></li>`).join("")+"</ul>":"Svi sati u narednih 24 h su povoljni.";
+  }
+  box.innerHTML=`<div class="panel-head" style="align-items:center"><div><div class="eyebrow">Narednih 24 h, po satima</div><h2>${QD_T[k]}</h2></div><button type="button" class="qd-close" id="qdClose">Zatvori</button></div>
+    <div class="qd-sum">${sum}</div>
+    ${type==="none"?"":`<div class="qd-chart"><canvas id="qdChart" role="img" aria-label="${esc(QD_T[k])} po satima za narednih 24 sata"></canvas></div>`}
+    <div class="qd-hrs"><div class="qd-grid">${cols.map(c=>`<div><span class="h">${c[0]}h</span>${k==="spray"?c[1]:`<span class="a">${cTxt(c[1])}</span>`}<span class="b">${cTxt(c[2])}</span></div>`).join("")}</div></div>
+    ${extra?`<div style="font-size:12.5px;color:var(--muted)">${extra}</div>`:""}`;
+  box.hidden=false;
+  $("#qdClose").addEventListener("click",()=>{qd.k=null;box.hidden=true;document.querySelectorAll("#qtiles .qt").forEach(b=>b.setAttribute("aria-expanded","false"))});
+  if(qd.chart){qd.chart.destroy();qd.chart=null}
+  if(type!=="none"){
+    qd.chart=new Chart($("#qdChart"),{data:{labels:H.map(h=>h+"h"),datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},
+      plugins:{legend:{display:ds.length>1,labels:{color:css("--ink-2"),boxWidth:12,boxHeight:2}},tooltip:{callbacks:{title:it=>dayLabel(state.time[S.idx[it[0].dataIndex]])+" "+state.time[S.idx[it[0].dataIndex]].slice(11,16),label:c=>c.dataset.label+": "+(c.parsed.y==null?"–":r1(c.parsed.y))}}},
+      scales:{x:{grid:{display:false},ticks:{color:css("--muted"),maxRotation:0,autoSkip:true,maxTicksLimit:12}},y:{...y,title:{display:!!y.title,text:y.title,color:css("--muted")},ticks:{color:css("--muted")},grid:{color:css("--line")}}}}});
+  }
+}
+$("#qtiles").addEventListener("click",e=>{
+  const b=e.target.closest("[data-qk]");if(!b)return;
+  qd.k=qd.k===b.dataset.qk?null:b.dataset.qk;
+  document.querySelectorAll("#qtiles .qt").forEach(x=>x.setAttribute("aria-expanded",String(x.dataset.qk===qd.k)));
+  if(!qd.k){$("#qdet").hidden=true;return}
+  renderQDetail();
+  $("#qdet").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"nearest"});
+});
 /* prevlačenje prstom između parcela */
 function swipeLoc(dir){
   const n=state.saved.length;if(n<2)return;
