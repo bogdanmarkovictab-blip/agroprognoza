@@ -462,10 +462,21 @@ button.qt[aria-expanded="true"]{border-color:var(--accent);background:var(--acce
 .qdet .qd-sum{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink-2)}
 .qdet .qd-sum b{color:var(--ink);font-variant-numeric:tabular-nums}
 .qdet .qd-chart{position:relative;height:220px}
-.qdet .qd-hrs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
-.qdet .qd-grid{display:grid;grid-template-columns:repeat(24,minmax(46px,1fr));min-width:100%;font-variant-numeric:tabular-nums;font-size:12px;text-align:center}
+.qdet .qd-hrs{position:relative;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.qdet .qd-grid{display:grid;grid-template-columns:repeat(72,minmax(46px,1fr));min-width:100%;font-variant-numeric:tabular-nums;font-size:12px;text-align:center}
 .qdet .qd-grid>div{display:flex;flex-direction:column;gap:3px;padding:6px 0;border-left:1px solid var(--line)}
 .qdet .qd-grid>div:first-child{border-left:0}
+.qdet .qd-grid>div.d0{border-left:2px solid var(--line-2)}
+.qdet .qd-grid>div{cursor:pointer}
+.qdet .qd-grid>div.on{background:var(--accent-soft);border-radius:6px}
+.qdet .qd-slide{display:flex;align-items:center;gap:12px}
+.qdet .qd-slide input{flex:1;min-width:0;accent-color:var(--accent);height:28px}
+.qdet .qd-slide span{font-size:13px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.qdet .qd-read{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.qdet .qd-read>div{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--ink-2);min-width:0}
+.qdet .qd-read>div.cur{border-color:var(--accent);background:var(--accent-soft)}
+.qdet .qd-read b{display:block;font-family:var(--display);font-size:21px;font-weight:600;color:var(--ink);line-height:1.15}
+.qdet .qd-read small{display:block;overflow:hidden;text-overflow:ellipsis}
 .qdet .qd-grid .h{color:var(--muted);font-size:11px}
 .qdet .qd-grid .a{font-weight:600;color:var(--ink)}
 .qdet .qd-grid .b{color:var(--ink-2)}
@@ -1826,10 +1837,10 @@ function renderTiles(){
   if(qd.k)renderQDetail();
 }
 /* detalj pločice: narednih 24 h po satima (medijana uključenih modela) */
-const qd={k:null,chart:null};
+const qd={k:null,chart:null,sel:0,cols:[],idx:[]};
 const QD_T={rain:"Kiša",wind:"Vetar",hum:"Vlažnost vazduha",spray:"Prskanje",soil:"Temperatura zemljišta",uv:"UV indeks"};
 function qdSeries(){
-  const i0=state.nowIdx,n=Math.min(24,state.time.length-i0),idx=Array.from({length:n},(_,k)=>i0+k);
+  const i0=state.nowIdx,n=Math.min(72,state.time.length-i0),idx=Array.from({length:n},(_,k)=>i0+k);
   const C=key=>{const a=consensus(key);return idx.map(i=>a[i])};
   const A=key=>idx.map(i=>agroAt(key,state.time[i]));
   return {idx,C,A,hrs:idx.map(i=>state.time[i].slice(11,13))};
@@ -1844,7 +1855,8 @@ function renderQDetail(){
   if(k==="rain"){
     const p=S.C("precipitation"),pop=S.C("precipitation_probability");
     const tot=p.reduce((a,v)=>a+(v||0),0),wet=p.filter(v=>(v||0)>=0.1).length,mx=Math.max(0,...pop.filter(v=>v!=null));
-    sum=`<span>Ukupno <b>${r1(tot)} mm</b></span><span>Sati sa kišom <b>${wet}</b></span><span>Najveća verovatnoća <b>${r0(mx)}%</b></span>`;
+    const byDay={};S.idx.forEach((i,j)=>{const d=state.time[i].slice(0,10);byDay[d]=(byDay[d]||0)+(p[j]||0)});
+    sum=`<span>Ukupno za 72 h <b>${r1(tot)} mm</b></span>${Object.entries(byDay).map(([d,v])=>`<span>${DOW[dateOf(d).getUTCDay()]} <b>${r1(v)} mm</b></span>`).join("")}<span>Sati sa kišom <b>${wet}</b></span><span>Najveća verovatnoća <b>${r0(mx)}%</b></span>`;
     ds=[bar("Kiša (mm)",p.map(v=>v||0),css("--rain"))];y={min:0,suggestedMax:2,title:"mm"};
     cols=H.map((h,j)=>[h,(p[j]||0)<0.05?"0":r1(p[j]),pop[j]!=null?r0(pop[j])+"%":"–"]);
     extra="Vrednosti po satu: mm kiše i verovatnoća padavina.";
@@ -1875,7 +1887,7 @@ function renderQDetail(){
     ds=[bar("UV indeks",u.map(v=>v||0),css("--uv3"))];y={min:0,suggestedMax:6,title:"UV"};
     cols=H.map((h,j)=>[h,u[j]!=null?r1(u[j]):"–",u[j]!=null&&u[j]>0?uvLvl(u[j])[1]:""]);
   }else if(k==="spray"){
-    const sd=(state._spray?.sd||[]).slice(0,24),col={good:"var(--good)",warn:"var(--warn)",bad:"var(--bad)",na:"var(--line-2)"};
+    const sd=(state._spray?.sd||[]).slice(0,72),col={good:"var(--good)",warn:"var(--warn)",bad:"var(--bad)",na:"var(--line-2)"};
     const lab={good:"povoljno",warn:"uslovno",bad:"ne",na:"–"};
     const g=sd.filter(x=>x.r==="good").length,wn=sd.filter(x=>x.r==="warn").length;
     const w=state._spray?.wins?.[0];
@@ -1885,25 +1897,48 @@ function renderQDetail(){
     const bad=sd.filter(x=>x.r!=="good"&&x.why&&x.why.length);
     const reasons={};bad.forEach(x=>x.why.forEach(r=>{const key=r.replace(/\d+([.,]\d+)?/g,"").replace(/\s+/g," ").trim();reasons[key]=(reasons[key]||0)+1}));
     const top=Object.entries(reasons).sort((a,b)=>b[1]-a[1]).slice(0,3);
-    extra=top.length?"Najčešće smeta:<ul class=\"qd-why\">"+top.map(([r,n])=>`<li>${esc(bad.flatMap(x=>x.why).find(w=>w.replace(/\d+([.,]\d+)?/g,"").replace(/\s+/g," ").trim()===r))} <span style="color:var(--muted)">(${n} h)</span></li>`).join("")+"</ul>":"Svi sati u narednih 24 h su povoljni.";
+    extra=top.length?"Najčešće smeta u narednih 72 h:<ul class=\"qd-why\">"+top.map(([r,n])=>`<li>${esc(bad.flatMap(x=>x.why).find(w=>w.replace(/\d+([.,]\d+)?/g,"").replace(/\s+/g," ").trim()===r))} <span style="color:var(--muted)">(${n} h)</span></li>`).join("")+"</ul>":"Svi sati u narednih 72 h su povoljni.";
   }
-  box.innerHTML=`<div class="panel-head" style="align-items:center"><div><div class="eyebrow">Narednih 24 h, po satima</div><h2>${QD_T[k]}</h2></div><button type="button" class="qd-close" id="qdClose">Zatvori</button></div>
+  box.innerHTML=`<div class="panel-head" style="align-items:center"><div><div class="eyebrow">Narednih 72 h, po satima</div><h2>${QD_T[k]}</h2></div><button type="button" class="qd-close" id="qdClose">Zatvori</button></div>
     <div class="qd-sum">${sum}</div>
     ${type==="none"?"":`<div class="qd-chart"><canvas id="qdChart" role="img" aria-label="${esc(QD_T[k])} po satima za narednih 24 sata"></canvas></div>`}
-    <div class="qd-hrs"><div class="qd-grid">${cols.map(c=>`<div><span class="h">${c[0]}h</span>${k==="spray"?c[1]:`<span class="a">${cTxt(c[1])}</span>`}<span class="b">${cTxt(c[2])}</span></div>`).join("")}</div></div>
+    <div class="qd-slide"><input type="range" id="qdSlide" min="0" max="${Math.max(0,cols.length-1)}" step="1" value="${Math.min(qd.sel,cols.length-1)}" aria-label="Izbor sata"><span id="qdSlideL"></span></div>
+    <div class="qd-read" id="qdRead"></div>
+    <div class="qd-hrs" id="qdHrs"><div class="qd-grid">${cols.map((c,j)=>`<div data-j="${j}" class="${c[0]==="00"&&j?"d0":""}"><span class="h">${c[0]==="00"?DOW[dateOf(state.time[S.idx[j]]).getUTCDay()]:c[0]+"h"}</span>${k==="spray"?c[1]:`<span class="a">${cTxt(c[1])}</span>`}<span class="b">${cTxt(c[2])}</span></div>`).join("")}</div></div>
     ${extra?`<div style="font-size:12.5px;color:var(--muted)">${extra}</div>`:""}`;
   box.hidden=false;
   $("#qdClose").addEventListener("click",()=>{qd.k=null;box.hidden=true;document.querySelectorAll("#qtiles .qt").forEach(b=>b.setAttribute("aria-expanded","false"))});
+  qd.cols=cols;qd.idx=S.idx;qd.sel=Math.min(qd.sel,Math.max(0,cols.length-1));
   if(qd.chart){qd.chart.destroy();qd.chart=null}
   if(type!=="none"){
     qd.chart=new Chart($("#qdChart"),{data:{labels:H.map(h=>h+"h"),datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},
       plugins:{legend:{display:ds.length>1,labels:{color:css("--ink-2"),boxWidth:12,boxHeight:2}},tooltip:{callbacks:{title:it=>dayLabel(state.time[S.idx[it[0].dataIndex]])+" "+state.time[S.idx[it[0].dataIndex]].slice(11,16),label:c=>c.dataset.label+": "+(c.parsed.y==null?"–":r1(c.parsed.y))}}},
-      scales:{x:{grid:{display:false},ticks:{color:css("--muted"),maxRotation:0,autoSkip:true,maxTicksLimit:12}},y:{...y,title:{display:!!y.title,text:y.title,color:css("--muted")},ticks:{color:css("--muted")},grid:{color:css("--line")}}}}});
+      scales:{x:{grid:{display:false},ticks:{color:css("--muted"),maxRotation:0,autoSkip:false,callback:(v,i)=>H[i]==="00"?DOW[dateOf(state.time[S.idx[i]]).getUTCDay()]:(+H[i]%6===0?H[i]+"h":"")}},y:{...y,title:{display:!!y.title,text:y.title,color:css("--muted")},ticks:{color:css("--muted")},grid:{color:css("--line")}}}},
+      plugins:[{id:"qdDays",beforeDatasetsDraw(c){const{ctx,chartArea:a,scales:{x}}=c;ctx.save();ctx.fillStyle=css("--line-2");H.forEach((h,i)=>{if(h==="00"&&i)ctx.fillRect(x.getPixelForValue(i)-0.5,a.top,1,a.bottom-a.top)});ctx.restore()},
+        afterDatasetsDraw(c){const{ctx,chartArea:a,scales:{x}}=c;const px=x.getPixelForValue(qd.sel);ctx.save();ctx.strokeStyle=css("--ink");ctx.lineWidth=1.5;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(px,a.top);ctx.lineTo(px,a.bottom);ctx.stroke();ctx.restore()}}]});
   }
+  $("#qdSlide").addEventListener("input",e=>qdSelect(+e.target.value,true));
+  $("#qdHrs").addEventListener("click",e=>{const c=e.target.closest("[data-j]");if(c)qdSelect(+c.dataset.j,false)});
+  qdSelect(qd.sel,true);
+}
+/* izabrani sat: crta liniju na grafiku i poredi isti sat u ostalim danima */
+function qdSelect(j,scroll){
+  const cols=qd.cols;if(!cols.length)return;
+  j=Math.max(0,Math.min(j,cols.length-1));qd.sel=j;
+  const t=k=>state.time[qd.idx[k]];
+  $("#qdSlide").value=j;
+  $("#qdSlideL").textContent=(j===0?"Sada":dayLabel(t(j)))+" · "+t(j).slice(11,16);
+  const val=c=>qd.k==="spray"?c[2]:c[1];
+  const sub=c=>qd.k==="spray"?(c[3]&&c[3].r!=="good"&&c[3].why&&c[3].why.length?c[3].why[0]:"svi uslovi ispunjeni"):c[2];
+  const cards=[-48,-24,0,24,48].map(o=>j+o).filter(k=>k>=0&&k<cols.length);
+  $("#qdRead").innerHTML=cards.map(k=>`<div class="${k===j?"cur":""}">${esc(dayLabel(t(k)))} · ${t(k).slice(11,13)}h<b>${esc(String(val(cols[k])))}</b><small title="${esc(String(sub(cols[k])))}">${esc(String(sub(cols[k])))}</small></div>`).join("");
+  document.querySelectorAll("#qdHrs [data-j]").forEach(d=>d.classList.toggle("on",+d.dataset.j===j));
+  if(scroll){const box=$("#qdHrs"),c=box.querySelector(`[data-j="${j}"]`);if(c)box.scrollLeft=c.offsetLeft-box.clientWidth/2+c.offsetWidth/2}
+  if(qd.chart)qd.chart.draw();
 }
 $("#qtiles").addEventListener("click",e=>{
   const b=e.target.closest("[data-qk]");if(!b)return;
-  qd.k=qd.k===b.dataset.qk?null:b.dataset.qk;
+  qd.k=qd.k===b.dataset.qk?null:b.dataset.qk;qd.sel=0;
   document.querySelectorAll("#qtiles .qt").forEach(x=>x.setAttribute("aria-expanded",String(x.dataset.qk===qd.k)));
   if(!qd.k){$("#qdet").hidden=true;return}
   renderQDetail();
