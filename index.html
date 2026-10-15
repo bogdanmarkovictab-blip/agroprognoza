@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Agroprognoza</title>
-<meta name="theme-color" content="#2f6b4f">
+<meta name="theme-color" content="#059669">
 <meta name="description" content="Višemodelska vremenska prognoza za parcele: 8 modela, 10 dana, uslovi za prskanje, mraz, zemljište.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png" type="image/png">
@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="Agroprognoza">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="firebase-config.js"></script>
 <style>
@@ -511,7 +511,7 @@ button.qt[aria-expanded="true"]{border-color:var(--accent);background:var(--acce
 .qdet .qd-close{border:1px solid var(--line-2);background:var(--surface);border-radius:8px;height:32px;padding:0 10px;font:inherit;font-size:13px;cursor:pointer}
 .qdet .qd-why{font-size:12.5px;color:var(--ink-2);margin:0;padding-left:18px}
 /* bez objašnjenja */
-.panel-head p,.note:not(.src-note),.ten-note,.hrleg>span:not(.keep),.legend.hl-help{display:none!important}
+.note,.ten-note,.hrleg>span:not(.keep),.legend.hl-help{display:none!important}
 .view[data-view="vreme"] .eyebrow{display:none}
 @media (min-width:900px){.sky{min-height:300px}}
 /* okolina */
@@ -536,6 +536,170 @@ button.qt[aria-expanded="true"]{border-color:var(--accent);background:var(--acce
 .nl .row2{display:flex;gap:10px;font-size:12.5px;color:var(--ink-2);flex-wrap:wrap}
 .nl .row2 .rn{color:var(--rain);font-weight:600}
 .nl .row2 .so{color:var(--soil-ink);font-weight:600}
+
+/* ================= DIZAJN SISTEM v2 =================
+   Novi tokeni + mapiranje starih imena (--bg, --surface, --ink …) na njih,
+   tako da sav postojeći kod i prskanje.js automatski dobijaju novi izgled. */
+:root{
+  --bg-app:#f1f5f9; --bg-card:#ffffff; --bg-card-subtle:#f8fafc; --bg-glass:rgba(255,255,255,.85);
+  --text-primary:#0f172a; --text-secondary:#334155; --text-muted:#64748b;
+  --brand-primary:#059669; --brand-accent:#10b981; --brand-subtle:#ecfdf5;
+  --status-ideal:#10b981; --status-ideal-bg:#d1fae5; --status-ideal-text:#065f46;
+  --status-warn:#f59e0b; --status-warn-bg:#fef3c7; --status-warn-text:#92400e;
+  --status-bad:#ef4444; --status-bad-bg:#fee2e2; --status-bad-text:#991b1b;
+  --border-subtle:rgba(15,23,42,.08); --border-strong:rgba(15,23,42,.14);
+  --shadow-sm:0 1px 2px rgba(15,23,42,.04);
+  --shadow-card:0 4px 20px -2px rgba(15,23,42,.06),0 1px 3px 0 rgba(15,23,42,.04);
+  --shadow-float:0 12px 32px -4px rgba(15,23,42,.14);
+  --radius-xl:20px; --radius-lg:14px; --radius-md:10px; --radius-pill:9999px;
+  --font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,monospace;
+  /* mapiranje postojećih tokena */
+  --bg:var(--bg-app); --surface:var(--bg-card); --surface-2:var(--bg-card-subtle);
+  --ink:var(--text-primary); --ink-2:var(--text-secondary); --muted:var(--text-muted);
+  --line:#e2e8f0; --line-2:#cbd5e1;
+  --accent:var(--brand-primary); --accent-soft:var(--brand-subtle); --on-accent:#ffffff;
+  --good:var(--status-ideal); --warn:var(--status-warn); --bad:var(--status-bad);
+  --good-soft:var(--status-ideal-bg); --warn-soft:var(--status-warn-bg); --bad-soft:var(--status-bad-bg);
+  --display:var(--font-sans); --body:var(--font-sans);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg-app:#090d16; --bg-card:#111827; --bg-card-subtle:#1e293b; --bg-glass:rgba(17,24,39,.82);
+    --text-primary:#f8fafc; --text-secondary:#cbd5e1; --text-muted:#94a3b8;
+    --brand-primary:#10b981; --brand-accent:#34d399; --brand-subtle:rgba(16,185,129,.12);
+    --status-ideal-bg:rgba(16,185,129,.18); --status-ideal-text:#6ee7b7;
+    --status-warn-bg:rgba(245,158,11,.18); --status-warn-text:#fcd34d;
+    --status-bad-bg:rgba(239,68,68,.18); --status-bad-text:#fca5a5;
+    --border-subtle:rgba(255,255,255,.08); --border-strong:rgba(255,255,255,.15);
+    --shadow-card:0 10px 30px -5px rgba(0,0,0,.5); --shadow-float:0 14px 36px -6px rgba(0,0,0,.6);
+    --line:#1f2a3b; --line-2:#334155; --on-accent:#04140d;
+  }
+}
+:root[data-theme="dark"]{
+  --bg-app:#090d16; --bg-card:#111827; --bg-card-subtle:#1e293b; --bg-glass:rgba(17,24,39,.82);
+  --text-primary:#f8fafc; --text-secondary:#cbd5e1; --text-muted:#94a3b8;
+  --brand-primary:#10b981; --brand-accent:#34d399; --brand-subtle:rgba(16,185,129,.12);
+  --status-ideal-bg:rgba(16,185,129,.18); --status-ideal-text:#6ee7b7;
+  --status-warn-bg:rgba(245,158,11,.18); --status-warn-text:#fcd34d;
+  --status-bad-bg:rgba(239,68,68,.18); --status-bad-text:#fca5a5;
+  --border-subtle:rgba(255,255,255,.08); --border-strong:rgba(255,255,255,.15);
+  --shadow-card:0 10px 30px -5px rgba(0,0,0,.5); --shadow-float:0 14px 36px -6px rgba(0,0,0,.6);
+  --line:#1f2a3b; --line-2:#334155; --on-accent:#04140d;
+}
+
+/* tipografija */
+body{font-family:var(--font-sans);font-size:14.5px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"cv11" 1}
+h1,h2,h3{font-family:var(--font-sans);font-weight:700;letter-spacing:-.02em}
+h2{font-size:19px}
+.eyebrow{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--brand-primary)}
+.view[data-view="vreme"] .eyebrow{display:none}
+
+/* gornja traka: staklo */
+.topbar{z-index:100;background:var(--bg-glass);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid var(--border-subtle)}
+.tb-title b{font-family:var(--font-sans);font-weight:700;font-size:19px;letter-spacing:-.02em}
+.bar.open{z-index:99;background:var(--bg-glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border-subtle);box-shadow:var(--shadow-float)}
+
+/* Bento kartice */
+.panel,.now,.alert,.qt,.nl,.src{background:var(--bg-card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-card)}
+.panel{border-radius:var(--radius-xl);padding:20px;gap:14px}
+.now,.alert{border-radius:var(--radius-xl)}
+.qt,.nl{border-radius:var(--radius-lg)}
+.htile,.win,.src,.wtile,.cell-card{border-color:var(--border-subtle);border-radius:var(--radius-md)}
+@media (max-width:600px){.panel{padding:16px}}
+.wrap{gap:16px}
+.view{gap:16px}
+
+/* info sažeci umesto dugih pasusa */
+details.info-collapse{margin-top:6px;max-width:72ch}
+details.info-collapse>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;color:var(--text-muted);padding:2px 0;user-select:none}
+details.info-collapse>summary::-webkit-details-marker{display:none}
+details.info-collapse>summary::before{content:"i";display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;border:1.5px solid currentColor;font-size:10px;font-weight:800;font-style:normal;line-height:1}
+details.info-collapse>summary:hover{color:var(--brand-primary)}
+details.info-collapse[open]>summary{color:var(--brand-primary)}
+details.info-collapse>p{margin:6px 0 0;font-size:.78rem;line-height:1.5;color:var(--text-secondary);background:var(--bg-card-subtle);border-left:3px solid var(--brand-primary);padding:8px 12px;border-radius:0 8px 8px 0}
+
+/* segmentne kontrole (iOS) */
+.seg,.hrdays{display:inline-flex;gap:2px;background:var(--bg-card-subtle);padding:4px;border-radius:10px;border:1px solid var(--border-subtle);overflow-x:auto;scrollbar-width:none;max-width:100%}
+.seg::-webkit-scrollbar,.hrdays::-webkit-scrollbar{display:none}
+.seg button,.hrdays button{flex:0 0 auto;border:0!important;background:transparent;color:var(--text-secondary);font-weight:500;font-size:13px;padding:6px 12px;border-radius:7px;height:auto;white-space:nowrap;transition:background .15s,color .15s}
+.seg button:hover,.hrdays button:hover{color:var(--text-primary)}
+.seg button[aria-pressed="true"],.hrdays button[aria-pressed="true"],.seg button.active{background:var(--bg-card);color:var(--text-primary);box-shadow:var(--shadow-sm),0 0 0 1px var(--border-subtle);font-weight:600}
+:root[data-theme="dark"] .seg button[aria-pressed="true"],:root[data-theme="dark"] .hrdays button[aria-pressed="true"]{background:#334155}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .seg button[aria-pressed="true"],:root:not([data-theme="light"]) .hrdays button[aria-pressed="true"]{background:#334155}}
+
+/* dugmad i čipovi */
+.btn{border-radius:var(--radius-md);border:1px solid var(--border-strong);background:var(--bg-card);font-weight:500}
+.btn.primary{background:var(--brand-primary);border-color:var(--brand-primary);color:#fff;font-weight:600}
+.chip,.tog{border-radius:var(--radius-pill);border:1px solid var(--border-strong);background:var(--bg-card)}
+.chip[aria-pressed="true"]{background:var(--brand-subtle);border-color:var(--brand-primary);color:var(--brand-primary)}
+.search input,.saveform input,.mgr li input,.auth-form input{border-radius:var(--radius-md);border:1px solid var(--border-strong)}
+
+/* statusne oznake (semafor) */
+.pill.good{background:var(--status-ideal-bg);color:var(--status-ideal-text)}
+.pill.warn{background:var(--status-warn-bg);color:var(--status-warn-text)}
+.pill.bad{background:var(--status-bad-bg);color:var(--status-bad-text)}
+.pill{border-radius:var(--radius-pill);font-weight:700}
+
+/* tabele: glatko pomeranje, zakucana prva kolona, linije i hover */
+.scroll,.hrscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.mx td,.acct td,.htab td,table.soil td{font-family:var(--font-mono);font-size:12.5px;font-weight:500}
+.mx td .cell .t,.mx td .cell .p{font-family:var(--font-mono)}
+.mx th.mname,.mx td:first-child{font-family:var(--font-sans)}
+.acct td:first-child,.htab td:first-child,table.soil td:first-child{font-family:var(--font-sans);font-size:13px}
+.mx th,.mx td,.acct th,.acct td,.htab th,.htab td,table.soil th,table.soil td{border-bottom:1px solid var(--border-subtle)}
+.acct th:first-child,.acct td:first-child,.htab th:first-child,.htab td:first-child{position:sticky;left:0;z-index:2;background:var(--bg-card)}
+.mx th.mname{background:var(--bg-card);z-index:3}
+.mx tbody tr:hover td,.mx tbody tr:hover th.mname,.acct tbody tr:hover td,.htab tbody tr:hover td,table.soil tbody tr:hover td{background:var(--bg-card-subtle)}
+.mx tr.cons th,.mx tr.cons td,.mx tr.cons th.mname{background:var(--brand-subtle)}
+.acct tr.med td{background:var(--brand-subtle)}
+.acct td.best{color:var(--status-ideal-text)}
+.acct td.worst{color:var(--status-bad-text)}
+
+/* PRSKANJE: najuočljiviji deo */
+.sprayrow{gap:3px;height:42px}
+.sprayrow div{border-radius:6px}
+.sprayrow .good{background:var(--status-ideal)} .sprayrow .warn{background:var(--status-warn)} .sprayrow .bad{background:var(--status-bad);opacity:.85}
+.sprayrow .night{box-shadow:inset 0 -7px 0 rgba(15,23,42,.28)}
+.windows{gap:8px}
+.win{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--bg-card-subtle);padding:10px 12px}
+.win:first-child{background:var(--status-ideal-bg);border-color:transparent;color:var(--status-ideal-text);font-size:14px}
+.win:first-child b{display:inline-flex;align-items:center;gap:8px}
+.win:first-child b::before{content:"";width:20px;height:20px;border-radius:50%;flex:0 0 auto;background:var(--status-ideal) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4 8-9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px no-repeat}
+.win:first-child span{color:var(--status-ideal-text);font-weight:600}
+.hrcol .spd{border-radius:var(--radius-pill);height:8px}
+.hrcol .spd.good{background:var(--status-ideal)} .hrcol .spd.warn{background:var(--status-warn)} .hrcol .spd.bad{background:var(--status-bad)}
+.stip{border-radius:var(--radius-lg);box-shadow:var(--shadow-float);border-color:var(--border-strong)}
+#vPrskanje .pxstrip{gap:3px}
+#vPrskanje .pxstrip button{border-radius:6px;height:34px}
+
+/* kartice na početnom ekranu */
+.qt{padding:14px 8px}
+.qt .v{font-family:var(--font-sans);font-weight:700;font-size:22px;letter-spacing:-.02em}
+.sky{border-radius:24px;box-shadow:var(--shadow-card)}
+.sky .t{font-family:var(--font-sans);font-weight:300;letter-spacing:-.05em;font-size:108px}
+.sky .c{font-weight:600}
+.now .big,.soilbig .v,.alert .val,.htile .v,.nl .v,.mini .mn,.trow .dn,.mx thead th .d{font-family:var(--font-sans);letter-spacing:-.02em}
+.now .big{font-weight:300;letter-spacing:-.04em}
+.trow .dn{font-size:16px;font-weight:700}
+.alert .val{font-size:22px;font-weight:700}
+.htile .v{font-weight:700}
+
+/* plutajući donji dok */
+body{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
+.bnav{left:50%;right:auto;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:auto;max-width:calc(100% - 24px);gap:2px;padding:6px;background:var(--bg-glass);backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);border:1px solid var(--border-strong);border-top:1px solid var(--border-strong);border-radius:var(--radius-pill);box-shadow:var(--shadow-float);z-index:200}
+.bnav button{flex:0 0 auto;min-width:74px;padding:7px 12px 6px;border-radius:var(--radius-pill);color:var(--text-muted);font-size:11px;font-weight:600;gap:1px}
+.bnav button svg{width:22px;height:22px}
+.bnav button:hover{color:var(--text-primary)}
+.bnav button[aria-current="page"]{background:var(--brand-subtle);color:var(--brand-primary)}
+@media (max-width:420px){.bnav button{min-width:0;padding:7px 10px 6px}}
+.toast{bottom:calc(92px + env(safe-area-inset-bottom,0px));border-radius:var(--radius-lg)}
+/* opisi koje generiše JS ostaju skriveni; sažeci u <details> se vide */
+.panel-head p{display:none}
+details.info-collapse>p{display:block}
+.mx th.mname{white-space:normal;line-height:1.25;overflow-wrap:anywhere}
+@media (max-width:600px){.mx th.mname{font-size:12.5px;padding-left:6px;padding-right:6px}}
+@media (max-width:700px){.sprayrow{gap:1px}.sprayrow div{border-radius:3px}}
 </style>
 </head>
 <body>
@@ -590,7 +754,7 @@ button.qt[aria-expanded="true"]{border-color:var(--accent);background:var(--acce
     <div>
       <div class="eyebrow">Pregled</div>
       <h2>Narednih 10 dana</h2>
-      <p>Traka ide od najniže do najviše temperature dana (medijana modela), a boja prati stvarnu temperaturu: plavo hladno, zeleno umereno, žuto toplo, crveno vruće. Tanka siva linija pokazuje koliko najdalje idu pojedini modeli. Kružić je trenutna temperatura. Dodirni dan za prikaz po satima.</p>
+      <details class="info-collapse"><summary>Kako čitati ove podatke</summary><p>Traka ide od najniže do najviše temperature dana (medijana modela), a boja prati stvarnu temperaturu: plavo hladno, zeleno umereno, žuto toplo, crveno vruće. Tanka siva linija pokazuje koliko najdalje idu pojedini modeli. Kružić je trenutna temperatura. Dodirni dan za prikaz po satima.</p></details>
     </div>
   </div>
   <div class="ten" id="ten"><div class="loading">Učitavam…</div></div>
@@ -612,7 +776,7 @@ button.qt[aria-expanded="true"]{border-color:var(--accent);background:var(--acce
     <div>
       <div class="eyebrow">Poređenje izvora</div>
       <h2>Modeli po danima</h2>
-      <p>Svaki red je drugi meteorološki model. Zeleni red je medijana svih uključenih modela. Oznaka „slaganje“ pokazuje koliko se modeli razilaze u maksimalnoj temperaturi.</p>
+      <details class="info-collapse"><summary>Kako čitati ove podatke</summary><p>Svaki red je drugi meteorološki model. Zeleni red je medijana svih uključenih modela. Oznaka „slaganje“ pokazuje koliko se modeli razilaze u maksimalnoj temperaturi.</p></details>
     </div>
   </div>
   <div class="mxhead" id="mxHead">
@@ -658,7 +822,7 @@ button.qt[aria-expanded="true"]{border-color:var(--accent);background:var(--acce
       <div>
         <div class="eyebrow">Tretmani</div>
         <h2>Uslovi za prskanje, narednih 72 h</h2>
-        <p>Računa se iz medijane modela: vetar, udari, kiša u tom i naredna 2 sata, temperatura i Delta T (razlika suvog i vlažnog termometra).</p>
+        <details class="info-collapse"><summary>Kako čitati ove podatke</summary><p>Računa se iz medijane modela: vetar, udari, kiša u tom i naredna 2 sata, temperatura i Delta T (razlika suvog i vlažnog termometra).</p></details>
       </div>
     </div>
     <div class="spray">
@@ -699,7 +863,7 @@ button.qt[aria-expanded="true"]{border-color:var(--accent);background:var(--acce
     <div>
       <div class="eyebrow">Istorija</div>
       <h2>Vreme koje je bilo</h2>
-      <p>Dnevni podaci za ovu lokaciju od 1950. do juče, u poređenju sa prošlom godinom i višegodišnjim prosekom 1991–2020.</p>
+      <details class="info-collapse"><summary>Kako čitati ove podatke</summary><p>Dnevni podaci za ovu lokaciju od 1950. do juče, u poređenju sa prošlom godinom i višegodišnjim prosekom 1991–2020.</p></details>
     </div>
     <div class="controls">
       <label class="yearsel">Godina <select id="hYear"></select></label>
@@ -727,7 +891,7 @@ button.qt[aria-expanded="true"]{border-color:var(--accent);background:var(--acce
       <div class="scroll" id="hDays"></div>
     </div>
   </div>
-  <p class="note" id="hNote">Izvor: Open-Meteo, ERA5 reanaliza (ECMWF/Copernicus). To nisu očitavanja jedne stanice, nego mreža ćelija od oko 9–25 km. Ona objedinjuje merenja meteoroloških stanica, satelita i modela. Pouzdana je za trendove i poređenje godina. Lokalni pljuskovi mogu da odstupaju od kišomera na parceli. Poslednjih nekoliko dana (oznaka *) je preliminarno i dopunjuje se konačnim podacima posle oko 5 dana.</p>
+  <details class="info-collapse"><summary>O izvoru podataka</summary><p id="hNote">Izvor: Open-Meteo, ERA5 reanaliza (ECMWF/Copernicus). To nisu očitavanja jedne stanice, nego mreža ćelija od oko 9–25 km. Ona objedinjuje merenja meteoroloških stanica, satelita i modela. Pouzdana je za trendove i poređenje godina. Lokalni pljuskovi mogu da odstupaju od kišomera na parceli. Poslednjih nekoliko dana (oznaka *) je preliminarno i dopunjuje se konačnim podacima posle oko 5 dana.</p></details>
 </section>
 
 <section class="panel" id="acc">
@@ -735,7 +899,7 @@ button.qt[aria-expanded="true"]{border-color:var(--accent);background:var(--acce
     <div>
       <div class="eyebrow">Provera tačnosti</div>
       <h2>Koji model najbolje pogađa ovu parcelu</h2>
-      <p>Poredi šta je svaki model prognozirao unapred sa onim što se stvarno desilo, dan po dan. Manja greška je bolja.</p>
+      <details class="info-collapse"><summary>Kako čitati ove podatke</summary><p>Poredi šta je svaki model prognozirao unapred sa onim što se stvarno desilo, dan po dan. Manja greška je bolja.</p></details>
     </div>
     <div class="controls">
       <div class="seg" id="accLead" role="group" aria-label="Koliko dana unapred">
@@ -751,7 +915,7 @@ button.qt[aria-expanded="true"]{border-color:var(--accent);background:var(--acce
     </div>
   </div>
   <div id="accOut"><button class="btn primary" type="button" id="accRun">Analiziraj tačnost za ovu parcelu</button></div>
-  <p class="note">Kao „stvarno vreme“ koristi se ERA5 arhiva (izmereno i objedinjeno, mreža oko 9–25 km). ERA5 pravi ECMWF, pa ECMWF modeli mogu da imaju malu prednost u temperaturi. Za kišu je ERA5 manje precizan od kišomera, zato je bolje gledati „pogođene kišne dane“ nego milimetre. Najpouzdaniji zaključak daje period od 90 dana.</p>
+  <details class="info-collapse"><summary>O načinu provere</summary><p>Kao „stvarno vreme“ koristi se ERA5 arhiva (izmereno i objedinjeno, mreža oko 9–25 km). ERA5 pravi ECMWF, pa ECMWF modeli mogu da imaju malu prednost u temperaturi. Za kišu je ERA5 manje precizan od kišomera, zato je bolje gledati „pogođene kišne dane“ nego milimetre. Najpouzdaniji zaključak daje period od 90 dana.</p></details>
 </section>
 
 <section class="panel">
@@ -759,11 +923,11 @@ button.qt[aria-expanded="true"]{border-color:var(--accent);background:var(--acce
     <div>
       <div class="eyebrow">Izvori</div>
       <h2>Modeli i status</h2>
-      <p>Isključen model ne ulazi u medijanu ni u grafikon. Izbor se pamti u ovom pregledaču.</p>
+      <details class="info-collapse"><summary>Kako čitati ove podatke</summary><p>Isključen model ne ulazi u medijanu ni u grafikon. Izbor se pamti u ovom pregledaču.</p></details>
     </div>
   </div>
   <div class="sources" id="sources"></div>
-  <p class="note src-note">Podaci: Open-Meteo.com (CC BY 4.0), sirovi izlazi nacionalnih meteoroloških servisa. Google i Frog Weather nemaju javno dostupne podatke pa ne mogu biti ovde. Ovo je pomoćni alat; za odluke o tretmanima uvek pogledaj i stanje na parceli.</p>
+  <details class="info-collapse src-note"><summary>Izvor podataka i licenca</summary><p>Podaci: Open-Meteo.com (CC BY 4.0), sirovi izlazi nacionalnih meteoroloških servisa. Google i Frog Weather nemaju javno dostupne podatke pa ne mogu biti ovde. Ovo je pomoćni alat; za odluke o tretmanima uvek pogledaj i stanje na parceli.</p></details>
 </section>
 </div><!-- /vAgro -->
 <div class="view" id="vPrskanje" data-view="prskanje"></div>
