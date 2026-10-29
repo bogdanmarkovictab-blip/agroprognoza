@@ -941,6 +941,8 @@ details.info-collapse>p{display:block}
 </nav>
 
 <script src="prskanje.js"></script>
+<script src="gsap.min.js"></script>
+<script src="animacije.js"></script>
 <script>
 "use strict";
 const MODELS=[
@@ -1067,6 +1069,7 @@ async function load(){
   state.fetchedAt=new Date();
   if(gJob){const g=await gJob;state.models.google=g.err?{error:g.err}:googleAlign(g.rows)}
   renderAll();
+  if(window.Anim)Anim.intro();
 }
 
 /* ---------- Google Weather API (dodatni izvor, potreban ključ) ---------- */
@@ -2258,6 +2261,7 @@ function showView(v){
   if(v==="okolina")renderNear();
   if(v==="agro"&&state.time.length){renderChart();if(hist.seen)loadHist()}
   if(v==="prskanje"&&window.Prskanje)Prskanje.onShow();
+  if(window.Anim)Anim.view(v);
 }
 $("#bnav").addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(b)showView(b.dataset.go)});
 /* okolina: 8 tačaka na 8 km + sve parcele po udaljenosti */
@@ -2282,6 +2286,7 @@ async function renderNear(){
   const val=k=>{const o=J[k];if(!o)return{};const cur=o.current||{};const ht=o.hourly?.time||[],hi=ht.indexOf((cur.time||"").slice(0,13)+":00");return{T:cur.temperature_2m,C:cur.weather_code,N:cur.is_day===0,mx:o.daily?.temperature_2m_max?.[0],mn:o.daily?.temperature_2m_min?.[0],p:o.daily?.precipitation_sum?.[0],s6:hi>=0?o.hourly.soil_temperature_6cm?.[hi]:null}};
   $("#nearList").innerHTML=parcels.map((p,k)=>{const v=val(ring.length+k);const cur=p.km<0.05;return `<button type="button" class="nl ${cur?"cur":""}" data-pi="${k}">${icon(v.C,v.N)}<span class="n">${esc(p.name)}</span><span class="v num">${v.T==null?"–":Math.round(v.T)+"°"}</span><span class="row2 num"><span class="km">${cur?"●":r0(p.km)+" km"}</span><span>${r0(v.mx)}°/${r0(v.mn)}°</span>${(v.p||0)>=0.1?`<span class="rn">${r1(v.p)} mm</span>`:""}${v.s6!=null?`<span class="so">${r0(v.s6)}°</span>`:""}</span></button>`}).join("");
   near.ring=ring;near.parcels=parcels;
+  if(window.Anim)Anim.near();
 }
 $("#nearList").addEventListener("click",e=>{const b=e.target.closest("[data-pi]");if(!b)return;setLoc(near.parcels[+b.dataset.pi]);showView("vreme")});
 

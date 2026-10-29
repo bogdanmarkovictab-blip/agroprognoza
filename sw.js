@@ -1,7 +1,7 @@
 // Agroprognoza service worker: aplikacija radi i bez signala (prikazuje poslednju preuzetu prognozu)
-const SHELL = "ap-shell-v35";
+const SHELL = "ap-shell-v36";
 const DATA = "ap-data-v1";
-const FILES = ["./", "index.html", "firebase-config.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "prskanje.js", "inputi.json"];
+const FILES = ["./", "index.html", "firebase-config.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "prskanje.js", "inputi.json", "gsap.min.js", "animacije.js"];
 const STATIC_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com", "cdnjs.cloudflare.com", "www.gstatic.com"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(SHELL).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
