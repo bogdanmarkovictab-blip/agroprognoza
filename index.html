@@ -387,6 +387,9 @@ table.acct{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums
 .saveform input{height:32px;border:1px solid var(--line-2);border-radius:8px;padding:0 8px;background:var(--bg);color:var(--ink);width:170px;max-width:100%}
 .saveform .row{display:flex;gap:6px}
 .saveform .msg{flex-basis:100%;font-size:12px;color:var(--ink-2)}
+.chip.primary{background:var(--brand-primary,var(--accent));border-color:var(--brand-primary,var(--accent));color:#fff;font-weight:600}
+.saveform .row{flex-wrap:wrap}
+.chip:disabled{opacity:.6}
 .mgr li .c{color:var(--muted);font-size:11.5px;white-space:nowrap}
 
 @media (max-width:900px){
@@ -2252,7 +2255,8 @@ function toggleSheet(open,focusSearch){
 $("#tbList").addEventListener("click",()=>toggleSheet());
 $("#tbTitle").addEventListener("click",()=>toggleSheet());
 $("#tbSearch").addEventListener("click",()=>toggleSheet(true,true));
-document.addEventListener("click",e=>{if($("#bar").classList.contains("open")&&!e.target.closest("#bar,#topbar,.plist,.results"))toggleSheet(false)});
+/* zatvori meni samo na dodir van njega; composedPath pamti gde je dodir bio i kad se dugme u međuvremenu zameni (npr. „+ Sačuvaj parcelu“ → forma) */
+document.addEventListener("click",e=>{if(!$("#bar").classList.contains("open"))return;const inside=e.composedPath().some(n=>n instanceof Element&&n.matches("#bar,#topbar,.plist,.results,#toast"));if(!inside)toggleSheet(false)});
 function currentView(){return document.querySelector(".view.on")?.dataset.view||"vreme"}
 function showView(v){
   document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on",x.dataset.view===v));
@@ -2329,27 +2333,54 @@ $("#plist").addEventListener("click",e=>{
 document.addEventListener("click",e=>{if(!$("#plist").hidden&&!e.target.closest("#pwrap"))togglePlist(false)});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#plist").hidden){togglePlist(false);$("#pAll").focus()}});
 let rsT,lastNarrow=innerWidth<600;addEventListener("resize",()=>{clearTimeout(rsT);rsT=setTimeout(()=>{renderSaved();const n=innerWidth<600;if(n!==lastNarrow&&state.time.length){lastNarrow=n;renderMatrix()}},150)});
-function setLoc(l){toggleSheet(false);state.loc=l;store.set("ap.loc",l);renderMini();accReset();hist.key=null;hist.cur=null;setTimeout(()=>loadHist(),50);$("#results").hidden=true;$("#q").value="";renderSaved();load()}
+function setLoc(l,keepSheet){if(!keepSheet)toggleSheet(false);state.loc=l;store.set("ap.loc",l);renderMini();accReset();hist.key=null;hist.cur=null;setTimeout(()=>loadHist(),50);$("#results").hidden=true;$("#q").value="";renderSaved();load()}
 $("#saved").addEventListener("click",e=>{
   const b=e.target.closest("[data-k]");if(b)setLoc(state.saved[+b.dataset.k]);
 });
+/* GPS: prvo precizno (do 25 s), pa ako ne uspe, približno sa mreže */
+function gps(){
+  return new Promise((res,rej)=>{
+    if(!navigator.geolocation)return rej(new Error("Pregledač ne podržava lokaciju."));
+    const ok=p=>res({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy});
+    const why=e=>e.code===1?"Lokacija je isključena za ovu aplikaciju. Dozvoli je u podešavanjima telefona/pregledača.":e.code===2?"Telefon ne može da odredi lokaciju. Uključi GPS (Lokacija) i probaj ponovo.":"GPS se nije javio na vreme. Izađi na otvoreno i probaj ponovo.";
+    navigator.geolocation.getCurrentPosition(ok,e=>{
+      if(e.code===1)return rej(new Error(why(e)));
+      navigator.geolocation.getCurrentPosition(ok,e2=>rej(new Error(why(e2))),{enableHighAccuracy:false,timeout:15000,maximumAge:30000});
+    },{enableHighAccuracy:true,timeout:25000,maximumAge:0});
+  });
+}
+const accTxt=a=>a==null?"":a<=30?`Tačnost oko ±${Math.round(a)} m.`:`Tačnost je slaba (±${Math.round(a)} m). Ako možeš, sačekaj da se GPS uhvati pa dodirni „📍 Moja lokacija“ ponovo.`;
+function openSave(pre){
+  const l=pre||state.loc;
+  const nm=pre?"":(state.loc.name==="Moja lokacija"?"":state.loc.name);
+  $("#savebox").innerHTML=`<div class="saveform"><label>Naziv<input id="saveName" value="${esc(nm)}" placeholder="npr. Malina Jevremović" aria-label="Naziv parcele" autocomplete="off"></label><label>Koordinate<input id="saveCoord" class="num" value="${l.lat.toFixed(5)}, ${l.lon.toFixed(5)}" aria-label="Koordinate parcele" inputmode="decimal"></label><div class="row"><button class="chip" id="saveGps" type="button">📍 Moja lokacija</button><button class="chip primary" id="saveOk" type="button">Dodaj u lokacije</button><button class="chip" id="saveNo" type="button">Otkaži</button></div><div class="msg" id="saveMsg">${pre?"Koordinate su sa GPS-a. "+accTxt(pre.acc)+" Upiši naziv i dodirni „Dodaj u lokacije“.":"Koordinate su izabrane lokacije. Na terenu dodirni „📍 Moja lokacija“, ili nalepi koordinate iz Google Maps."}</div></div>`;
+  toggleSheet(true);
+  const n=$("#saveName");setTimeout(()=>{n.focus();if(n.value)n.select();$("#savebox").scrollIntoView({block:"nearest"})},30);
+}
+async function fillGps(btn){
+  const b=btn,old=b.textContent;b.disabled=true;b.textContent="Tražim GPS…";
+  try{const c=await gps();if(!$("#saveCoord"))return;$("#saveCoord").value=c.lat.toFixed(5)+", "+c.lon.toFixed(5);$("#saveMsg").textContent="Koordinate su sa GPS-a. "+accTxt(c.acc)+" Upiši naziv nove parcele.";const n=$("#saveName");if(n.value.trim()===state.loc.name)n.value="";n.focus()}
+  catch(err){if($("#saveMsg"))$("#saveMsg").textContent=err.message}
+  finally{b.disabled=false;b.textContent=old}
+}
 $("#savebox").addEventListener("click",e=>{
-  if(e.target.id==="saveBtn"){
-    $("#savebox").innerHTML=`<div class="saveform"><label>Naziv<input id="saveName" value="${esc(state.loc.name)}" aria-label="Naziv parcele"></label><label>Koordinate<input id="saveCoord" class="num" value="${state.loc.lat.toFixed(5)}, ${state.loc.lon.toFixed(5)}" aria-label="Koordinate parcele" inputmode="decimal"></label><div class="row"><button class="chip" id="saveOk" type="button">Sačuvaj</button><button class="chip" id="saveNo" type="button">Otkaži</button></div><div class="msg" id="saveMsg">Koordinate su sada izabrane lokacije. Za drugu parcelu nalepi njene koordinate iz Google Maps.</div></div>`;
-    $("#saveName").focus();$("#saveName").select();
-  }else if(e.target.id==="saveOk"||e.target.id==="saveForce"){
-    const n=$("#saveName").value.trim()||state.loc.name;
+  const id=e.target.id;
+  if(id==="saveBtn")openSave();
+  else if(id==="saveGps")fillGps(e.target);
+  else if(id==="saveOk"||id==="saveForce"){
     const c=parseCoord($("#saveCoord").value);
     if(!c){$("#saveMsg").textContent="Koordinate nisu ispravne. Primer: 43.58, 21.33";return}
-    const moved=Math.abs(c.lat-state.loc.lat)>1e-4||Math.abs(c.lon-state.loc.lon)>1e-4;
-    const l={name:n,sub:moved?"koordinate":(state.loc.sub||""),lat:c.lat,lon:c.lon};
-    const ex=state.saved.findIndex(p=>Math.abs(p.lat-l.lat)<1e-4&&Math.abs(p.lon-l.lon)<1e-4);
-    if(ex>=0&&state.saved[ex].name!==n&&e.target.id!=="saveForce"){
-      $("#saveMsg").innerHTML=`Na ovim koordinatama već je parcela „${esc(state.saved[ex].name)}“. Za novu parcelu unesi njene koordinate. <button class="linkbtn" type="button" id="saveForce">Ipak preimenuj „${esc(state.saved[ex].name)}“ u „${esc(n)}“</button>`;return}
+    const d=new Date();
+    const n=$("#saveName").value.trim()||("Parcela "+d.getDate()+"."+(d.getMonth()+1)+".");
+    const ex=state.saved.findIndex(p=>Math.abs(p.lat-c.lat)<1e-4&&Math.abs(p.lon-c.lon)<1e-4);
+    if(ex>=0&&state.saved[ex].name!==n&&id!=="saveForce"){
+      $("#saveMsg").innerHTML=`Na ovim koordinatama već je parcela „${esc(state.saved[ex].name)}“. <button class="linkbtn" type="button" id="saveForce">Preimenuj je u „${esc(n)}“</button>`;return}
+    const l={name:n,sub:ex>=0?state.saved[ex].sub:"koordinate",lat:c.lat,lon:c.lon};
     if(ex>=0)state.saved[ex]=l;else state.saved.push(l);
     store.set("ap.saved",state.saved);resetSave();
-    if(moved)setLoc(l);else{state.loc=l;store.set("ap.loc",l);renderSaved();renderNow();renderMini()}
-  }else if(e.target.id==="saveNo")resetSave();
+    setLoc(l);
+    toast(ex>=0?`Parcela „${esc(n)}“ je ažurirana.`:`„${esc(n)}“ je dodata u lokacije.`,4000);
+  }else if(id==="saveNo")resetSave();
 });
 $("#savebox").addEventListener("keydown",e=>{if(e.target.id==="saveName"||e.target.id==="saveCoord"){if(e.key==="Enter")$("#saveOk").click();if(e.key==="Escape")resetSave()}});
 function parseCoord(v){const m=String(v).match(/^\s*(-?\d{1,2}(?:[.,]\d+)?)\s*[,; ]\s*(-?\d{1,3}(?:[.,]\d+)?)\s*$/);if(!m)return null;const la=+m[1].replace(",","."),lo=+m[2].replace(",",".");if(Math.abs(la)>90||Math.abs(lo)>180)return null;return{lat:la,lon:lo}}
@@ -2374,11 +2405,14 @@ async function search(v){
   }catch(err){box.innerHTML=`<button type="button" disabled>Pretraga nije uspela: ${esc(err.message)}</button>`;box.hidden=false}
 }
 $("#results").addEventListener("click",e=>{const b=e.target.closest("button[data-lat]");if(b)setLoc({name:b.dataset.name,sub:b.dataset.sub,lat:+b.dataset.lat,lon:+b.dataset.lon})});
-$("#geo").addEventListener("click",()=>{
-  if(!navigator.geolocation){alertMsg("Pregledač ne podržava lokaciju.");return}
-  $("#geo").textContent="Tražim…";
-  navigator.geolocation.getCurrentPosition(p=>{$("#geo").textContent="Moja lokacija";setLoc({name:"Moja lokacija",sub:"GPS",lat:p.coords.latitude,lon:p.coords.longitude})},
-    err=>{$("#geo").textContent="Moja lokacija";alertMsg("Lokacija nije dostupna: "+err.message)},{enableHighAccuracy:true,timeout:10000});
+$("#geo").addEventListener("click",async()=>{
+  const b=$("#geo");if(b.disabled)return;b.disabled=true;b.textContent="Tražim…";
+  try{
+    const c=await gps();
+    setLoc({name:"Moja lokacija",sub:"GPS",lat:c.lat,lon:c.lon},true);
+    openSave(c);
+  }catch(err){alertMsg(err.message)}
+  finally{b.disabled=false;b.textContent="Moja lokacija"}
 });
 function alertMsg(t){const box=$("#results");box.innerHTML=`<button type="button" disabled>${esc(t)}</button>`;box.hidden=false}
 $("#refresh").addEventListener("click",load);
@@ -2512,7 +2546,7 @@ async function onUser(u){
   if(Array.isArray(data.modeli)&&data.modeli.length){const ok=data.modeli.filter(id=>MODELS.some(m=>m.id===id));if(ok.length){state.enabled=new Set(ok);store.setLocal("ap.enabled",ok);if(state.time.length)renderAll()}}
   cloudPush(true);
   cloud.unsub=cloud.ref.onSnapshot(s=>{
-    if(s.metadata.hasPendingWrites)return;
+    if(s.metadata.hasPendingWrites||cloud.pending)return;
     const d=s.data()||{};
     if(Array.isArray(d.parcele)&&JSON.stringify(cleanParcels(d.parcele))!==JSON.stringify(state.saved))applySaved(d.parcele);
   },()=>{});
@@ -2520,9 +2554,10 @@ async function onUser(u){
 }
 function cloudPush(now){
   if(!cloud.ref||!cloud.user)return;
-  clearTimeout(cloud.timer);
+  clearTimeout(cloud.timer);const my=cloud.seq=(cloud.seq||0)+1;cloud.pending=true;
+  const fin=()=>{if(cloud.seq===my)cloud.pending=false};
   const go=()=>cloud.ref.set({parcele:state.saved,modeli:[...state.enabled],email:cloud.user.email||"",azurirano:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})
-    .catch(e=>{cloud.msg="Čuvanje na nalogu nije uspelo ("+(e.code||e.message)+"). Parcele su sačuvane na ovom uređaju.";renderAuth()});
+    .then(fin,e=>{fin();cloud.msg="Čuvanje na nalogu nije uspelo ("+(e.code||e.message)+"). Parcele su sačuvane na ovom uređaju.";renderAuth()});
   if(now)go();else cloud.timer=setTimeout(go,600);
 }
 const AUTH_ERR={"auth/invalid-credential":"Pogrešan imejl ili lozinka.","auth/wrong-password":"Pogrešan imejl ili lozinka.","auth/user-not-found":"Ne postoji nalog sa tim imejlom.","auth/invalid-email":"Imejl adresa nije ispravna.","auth/too-many-requests":"Previše pokušaja. Sačekaj par minuta pa probaj ponovo.","auth/network-request-failed":"Nema internet veze.","auth/user-disabled":"Ovaj nalog je isključen.","auth/missing-password":"Upiši lozinku."};
